@@ -1,0 +1,25 @@
+{
+  "name": "calorie-bot",
+  "version": "1.0.0",
+  "description": "Telegram Mini App for food calorie estimation",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "openai": "^6.34.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

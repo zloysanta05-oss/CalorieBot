@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CalorieBot</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Tab: Analyze -->
+  <div id="tab-analyze" class="tab-content active">
+    <!-- Input mode -->
+    <div id="analyze-input">
+      <div class="action-area">
+        <button class="action-btn" id="btn-photo">
+          <div class="action-icon photo-icon">&#128247;</div>
+          <div class="action-text">
+            <h3>&#128248; Сфотографировать</h3>
+            <p>Сделайте фото блюда или выберите из галереи</p>
+          </div>
+        </button>
+        <button class="action-btn" id="btn-text-mode">
+          <div class="action-icon text-icon">&#9998;</div>
+          <div class="action-text">
+            <h3>&#9997; Описать блюдо</h3>
+            <p>Напишите что вы съели, например «борщ с хлебом»</p>
+          </div>
+        </button>
+      </div>
+
+      <div id="text-input-area" class="hidden">
+        <textarea class="textarea" id="food-description" placeholder="Опишите блюдо, например: «гречка с курицей и салат из помидоров»" maxlength="500"></textarea>
+        <div style="margin-top:8px">
+          <button class="btn btn-primary" id="btn-analyze-text">Анализировать</button>
+        </div>
+      </div>
+
+      <div id="photo-preview-area" class="hidden">
+        <div class="photo-preview">
+          <img id="photo-preview-img" src="" alt="Preview">
+          <button class="remove-btn" id="btn-remove-photo">&times;</button>
+        </div>
+        <textarea class="textarea" id="photo-note" placeholder="Уточнение (необязательно), например: «это 2 порции» или «без соуса»" maxlength="300" style="margin-bottom:8px"></textarea>
+        <button class="btn btn-primary" id="btn-analyze-photo">Анализировать фото</button>
+      </div>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden">
+
+    <!-- Loading -->
+    <div id="analyze-loading" class="loading-state hidden">
+      <div class="spinner"></div>
+      <p>Анализируем ваше блюдо...</p>
+    </div>
+
+    <!-- Result -->
+    <div id="analyze-result" class="hidden">
+      <div class="result-card">
+        <div class="dish-name" id="result-dish-name"></div>
+        <div id="result-confidence" class="confidence-badge"></div>
+        <div class="calories-big" id="result-calories"></div>
+        <div class="calories-label">ккал</div>
+        <div class="macros-row">
+          <div class="macro-badge macro-protein">
+            <span class="macro-value" id="result-protein"></span>
+            <span class="macro-label">Белки</span>
+          </div>
+          <div class="macro-badge macro-fat">
+            <span class="macro-value" id="result-fat"></span>
+            <span class="macro-label">Жиры</span>
+          </div>
+          <div class="macro-badge macro-carbs">
+            <span class="macro-value" id="result-carbs"></span>
+            <span class="macro-label">Углеводы</span>
+          </div>
+        </div>
+        <div class="portion-info" id="result-portion"></div>
+        <div id="result-items" class="items-breakdown hidden"></div>
+
+        <div class="meal-type-row" id="meal-type-selector">
+          <button class="meal-type-btn" data-type="breakfast">&#127749; Завтрак</button>
+          <button class="meal-type-btn active" data-type="lunch">&#9728; Обед</button>
+          <button class="meal-type-btn" data-type="dinner">&#127769; Ужин</button>
+          <button class="meal-type-btn" data-type="snack">&#127871; Перекус</button>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn btn-secondary" id="btn-retry">Заново</button>
+          <button class="btn btn-primary" id="btn-save-meal">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Diary -->
+  <div id="tab-diary" class="tab-content">
+    <div class="date-nav">
+      <button id="date-prev">&#8249;</button>
+      <div style="text-align:center">
+        <div class="date-text" id="diary-date-text"></div>
+        <div class="date-today hidden" id="diary-today-link">Сегодня</div>
+      </div>
+      <button id="date-next">&#8250;</button>
+    </div>
+
+    <div id="diary-totals" class="daily-totals hidden">
+      <div class="total-row">
+        <span class="total-cals" id="diary-total-cals"></span>
+        <span class="total-goal" id="diary-total-goal"></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="diary-progress"></div>
+      </div>
+    </div>
+
+    <div id="diary-list"></div>
+    <div id="diary-empty" class="empty-state hidden">
+      <div class="empty-icon">&#127869;</div>
+      <p>Нет записей за этот день</p>
+      <p style="margin-top:4px;font-size:12px">Перейдите на вкладку анализа, чтобы добавить приём пищи</p>
+    </div>
+  </div>
+
+  <!-- Tab: Stats -->
+  <div id="tab-stats" class="tab-content">
+    <div class="stats-hero">
+      <div class="progress-ring-container" id="stats-ring">
+        <svg width="160" height="160">
+          <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="10"/>
+          <circle id="ring-progress" cx="80" cy="80" r="70" fill="none" stroke="var(--link)" stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="439.82" stroke-dashoffset="439.82"/>
+        </svg>
+        <div class="ring-text">
+          <span class="ring-value" id="stats-today-cals">0</span>
+          <span class="ring-label" id="stats-today-label">из 2000 ккал</span>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--hint)" id="stats-remaining-text"></div>
+    </div>
+
+    <div class="macro-stats-grid">
+      <div class="macro-stat-card" style="border-top:3px solid var(--protein-color)">
+        <div class="stat-value" id="stats-protein">0 г</div>
+        <div class="stat-label">Белки</div>
+      </div>
+      <div class="macro-stat-card" style="border-top:3px solid var(--fat-color)">
+        <div class="stat-value" id="stats-fat">0 г</div>
+        <div class="stat-label">Жиры</div>
+      </div>
+      <div class="macro-stat-card" style="border-top:3px solid var(--carbs-color)">
+        <div class="stat-value" id="stats-carbs">0 г</div>
+        <div class="stat-label">Углеводы</div>
+      </div>
+    </div>
+
+    <div class="week-chart">
+      <h3>За неделю</h3>
+      <div class="chart-bars" id="week-chart-bars"></div>
+    </div>
+
+    <div class="goal-section">
+      <h3>Цель на день</h3>
+      <div class="goal-input-row">
+        <input type="number" class="input" id="goal-input" placeholder="2000" min="500" max="10000">
+        <button class="btn btn-primary btn-small" id="btn-save-goal">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab bar -->
+  <nav class="tab-bar">
+    <div class="tab-bar-item active" data-tab="tab-analyze">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <span>Анализ</span>
+    </div>
+    <div class="tab-bar-item" data-tab="tab-diary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+      <span>Дневник</span>
+    </div>
+    <div class="tab-bar-item" data-tab="tab-stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      <span>Статистика</span>
+    </div>
+  </nav>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/analyze.js"></script>
+  <script src="/js/diary.js"></script>
+  <script src="/js/stats.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
