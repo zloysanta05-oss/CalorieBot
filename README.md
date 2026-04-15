@@ -67,7 +67,7 @@ cal/
 
 ```bash
 # 1. Клонируйте проект
-cd cal
+git clone https://github.com/zloysanta05-oss/CalorieBot
 
 # 2. Установите зависимости
 npm install
