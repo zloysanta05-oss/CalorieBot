@@ -2,7 +2,6 @@ node_modules
 npm-debug.log
 .git
 .gitignore
-README.md
 .dockerignore
 Dockerfile
 docker-compose.yml
@@ -10,10 +9,7 @@ docker-compose.*.yml
 .env
 .env.*
 !.env.example
-!.env.production
-data/*.sqlite*
-data/*.sqlite-shm
-data/*.sqlite-wal
+data/
 coverage
 .nyc_output
 *.md

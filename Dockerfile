@@ -2,15 +2,25 @@ FROM node:22-alpine
 
 WORKDIR /app
 
+# better-sqlite3 requires native compilation tools
+RUN apk add --no-cache python3 make g++
+
+# Create non-root user early
+RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
+
 # Install dependencies first (layer cache optimization)
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
+# Remove build tools after native modules are compiled
+RUN apk del python3 make g++
+
 # Copy application files
 COPY server/ ./server/
 COPY public/ ./public/
-COPY data/ ./data/
-COPY .env.production .env
+
+# Create data directory with correct ownership
+RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data
 
 # Expose port
 EXPOSE 3000
@@ -19,8 +29,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget -qO- http://localhost:3000/ || exit 1
 
-# Run as non-root user
-RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
+# Switch to non-root user
 USER appuser
 
 CMD ["node", "server/index.js"]
