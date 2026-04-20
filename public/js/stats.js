@@ -90,6 +90,15 @@ var statsTab = (function() {
         showToast('Не удалось отозвать доступ', 'error');
       });
     });
+
+    document.getElementById('admin-users').addEventListener('click', function(e) {
+      var row = e.target.closest('.admin-user-row');
+      if (!row) return;
+
+      document.getElementById('admin-telegram-id').value = row.dataset.id;
+      showToast('Telegram ID подставлен');
+      haptic('light');
+    });
   }
 
   function show() {
@@ -153,6 +162,7 @@ var statsTab = (function() {
       adminSection.classList.remove('hidden');
       document.getElementById('admin-premium-stars').value = settings.premium_stars;
       document.getElementById('admin-free-limit').value = settings.free_daily_limit;
+      loadAdminUsers();
       loadAdminEntitlements();
     } else {
       adminSection.classList.add('hidden');
@@ -214,6 +224,58 @@ var statsTab = (function() {
     }).catch(function() {
       showToast('Не удалось загрузить доступы', 'error');
     });
+  }
+
+  function loadAdminUsers() {
+    if (!currentAccess || !currentAccess.is_admin) return;
+
+    api.getAdminUsers().then(function(res) {
+      var rows = res.data.users || [];
+      var container = document.getElementById('admin-users');
+
+      if (rows.length === 0) {
+        container.innerHTML = '<div class="admin-empty">Пользователей пока нет</div>';
+        return;
+      }
+
+      var html = '';
+      rows.forEach(function(user) {
+        html += '<button class="admin-user-row" type="button" data-id="' + user.telegram_id + '">' +
+          '<div class="admin-row-main">' +
+            '<div class="admin-row-id">' + escapeHtml(formatUserName(user)) + '</div>' +
+            '<div class="admin-row-meta">' + escapeHtml(formatUserMeta(user)) + '</div>' +
+          '</div>' +
+          '<span class="access-badge' + (user.has_premium ? ' premium' : '') + '">' + escapeHtml(formatAccessLabel(user)) + '</span>' +
+        '</button>';
+      });
+
+      container.innerHTML = html;
+    }).catch(function() {
+      showToast('Не удалось загрузить пользователей', 'error');
+    });
+  }
+
+  function formatUserName(user) {
+    var name = [user.first_name, user.last_name].filter(Boolean).join(' ');
+    if (user.username) {
+      name += name ? ' @' + user.username : '@' + user.username;
+    }
+    return name || 'Пользователь';
+  }
+
+  function formatUserMeta(user) {
+    var parts = [];
+    parts.push('ID: ' + user.telegram_id);
+    parts.push('анализов сегодня: ' + (user.today_analysis_count || 0));
+    if (user.last_seen_at) parts.push('был: ' + user.last_seen_at);
+    return parts.join(' · ');
+  }
+
+  function formatAccessLabel(user) {
+    if (user.access_type === 'owner') return 'Owner';
+    if (user.access_type === 'gifted') return 'Gifted';
+    if (user.access_type === 'subscription') return 'Premium';
+    return 'Free';
   }
 
   function formatEntitlementMeta(row) {

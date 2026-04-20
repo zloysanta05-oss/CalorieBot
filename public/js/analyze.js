@@ -5,6 +5,8 @@ var analyzeTab = (function() {
   var currentPhotoBlob = null;
   var selectedMealType = 'lunch';
   var inputSource = null; // 'photo' or 'text'
+  var recognition = null;
+  var isListening = false;
 
   function init() {
     var btnPhoto = document.getElementById('btn-photo');
@@ -12,6 +14,7 @@ var analyzeTab = (function() {
     var fileInput = document.getElementById('file-input');
     var btnAnalyzeText = document.getElementById('btn-analyze-text');
     var btnAnalyzePhoto = document.getElementById('btn-analyze-photo');
+    var btnVoice = document.getElementById('btn-voice-description');
     var btnRemovePhoto = document.getElementById('btn-remove-photo');
     var btnRetry = document.getElementById('btn-retry');
     var btnSave = document.getElementById('btn-save-meal');
@@ -44,6 +47,10 @@ var analyzeTab = (function() {
       }
     });
 
+    btnVoice.addEventListener('click', function() {
+      toggleVoiceInput();
+    });
+
     btnRemovePhoto.addEventListener('click', function() {
       resetToInput();
     });
@@ -68,6 +75,84 @@ var analyzeTab = (function() {
 
     // Auto-select meal type based on time
     autoSelectMealType();
+    initVoiceInput();
+  }
+
+  function initVoiceInput() {
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var btnVoice = document.getElementById('btn-voice-description');
+
+    if (!SpeechRecognition || !btnVoice) return;
+
+    recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    recognition.onstart = function() {
+      isListening = true;
+      btnVoice.classList.add('listening');
+      btnVoice.setAttribute('aria-label', 'Остановить голосовой ввод');
+      btnVoice.setAttribute('title', 'Остановить голосовой ввод');
+      document.getElementById('voice-status').classList.remove('hidden');
+      document.getElementById('voice-meter').classList.remove('hidden');
+      haptic('light');
+    };
+
+    recognition.onend = function() {
+      isListening = false;
+      btnVoice.classList.remove('listening');
+      btnVoice.setAttribute('aria-label', 'Голосовой ввод');
+      btnVoice.setAttribute('title', 'Голосовой ввод');
+      document.getElementById('voice-status').classList.add('hidden');
+      document.getElementById('voice-meter').classList.add('hidden');
+    };
+
+    recognition.onerror = function() {
+      showToast('Не удалось распознать голос', 'error');
+    };
+
+    recognition.onresult = function(event) {
+      var finalText = '';
+      var interimText = '';
+
+      for (var i = event.resultIndex; i < event.results.length; i++) {
+        var transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalText += transcript;
+        } else {
+          interimText += transcript;
+        }
+      }
+
+      var input = document.getElementById('food-description');
+      if (finalText) {
+        var existing = input.value.trim();
+        input.value = (existing ? existing + ' ' : '') + finalText.trim();
+      } else if (interimText) {
+        document.getElementById('voice-status').textContent = interimText.trim();
+      }
+    };
+
+    btnVoice.classList.remove('hidden');
+  }
+
+  function toggleVoiceInput() {
+    if (!recognition) {
+      showToast('Голосовой ввод не поддерживается', 'error');
+      return;
+    }
+
+    try {
+      if (isListening) {
+        recognition.stop();
+      } else {
+        document.getElementById('voice-status').textContent = 'Слушаю...';
+        recognition.start();
+      }
+    } catch (err) {
+      showToast('Не удалось включить микрофон', 'error');
+    }
   }
 
   function autoSelectMealType() {
@@ -115,6 +200,9 @@ var analyzeTab = (function() {
     document.getElementById('analyze-input').classList.remove('hidden');
     document.getElementById('analyze-loading').classList.add('hidden');
     document.getElementById('analyze-result').classList.add('hidden');
+    if (recognition && isListening) {
+      recognition.stop();
+    }
     autoSelectMealType();
   }
 

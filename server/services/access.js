@@ -13,6 +13,23 @@ const listEntitlementsStmt = db.prepare(`
   ORDER BY created_at DESC
 `);
 
+const listUsersStmt = db.prepare(`
+  SELECT
+    u.*,
+    e.type AS entitlement_type,
+    e.expires_at AS entitlement_expires_at,
+    e.note AS entitlement_note,
+    COALESCE(usage.analysis_count, 0) AS today_analysis_count
+  FROM users u
+  LEFT JOIN entitlements e
+    ON e.telegram_id = u.telegram_id
+   AND (e.expires_at IS NULL OR e.expires_at > datetime('now'))
+  LEFT JOIN usage_daily usage
+    ON usage.telegram_id = u.telegram_id
+   AND usage.date = date('now')
+  ORDER BY u.last_seen_at DESC
+`);
+
 const upsertGiftEntitlement = db.prepare(`
   INSERT INTO entitlements (telegram_id, type, granted_by, expires_at, note, created_at, updated_at)
   VALUES (?, 'gifted', ?, ?, ?, datetime('now'), datetime('now'))
@@ -137,11 +154,25 @@ function listEntitlements() {
   return listEntitlementsStmt.all();
 }
 
+function listUsers() {
+  return listUsersStmt.all().map(user => {
+    const access = getAccessStatus(user.telegram_id);
+    return {
+      ...user,
+      has_premium: access.has_premium,
+      access_type: access.access_type,
+      is_owner: access.is_owner,
+      is_admin: access.is_admin
+    };
+  });
+}
+
 module.exports = {
   getAccessStatus,
   grantGiftAccess,
   revokeAccess,
   listEntitlements,
+  listUsers,
   isAdmin,
   isOwner
 };

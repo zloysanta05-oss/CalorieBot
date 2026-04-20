@@ -1,4 +1,30 @@
 const crypto = require('crypto');
+const db = require('./db');
+
+const upsertUser = db.prepare(`
+  INSERT INTO users (telegram_id, first_name, last_name, username, language_code, is_premium, first_seen_at, last_seen_at)
+  VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+  ON CONFLICT(telegram_id) DO UPDATE SET
+    first_name = excluded.first_name,
+    last_name = excluded.last_name,
+    username = excluded.username,
+    language_code = excluded.language_code,
+    is_premium = excluded.is_premium,
+    last_seen_at = datetime('now')
+`);
+
+function rememberUser(user) {
+  if (!user || !user.id) return;
+
+  upsertUser.run(
+    Number(user.id),
+    user.first_name || null,
+    user.last_name || null,
+    user.username || null,
+    user.language_code || null,
+    user.is_premium ? 1 : 0
+  );
+}
 
 function validateInitData(initData, botToken) {
   if (!initData) return null;
@@ -49,6 +75,7 @@ function authMiddleware(req, res, next) {
     const initData = req.headers['x-telegram-init-data'];
     if (!initData) {
       req.telegramUser = { id: 12345, first_name: 'Dev', username: 'developer' };
+      rememberUser(req.telegramUser);
       return next();
     }
   }
@@ -66,6 +93,7 @@ function authMiddleware(req, res, next) {
   }
 
   req.telegramUser = user;
+  rememberUser(user);
   next();
 }
 

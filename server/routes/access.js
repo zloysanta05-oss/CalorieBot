@@ -4,6 +4,7 @@ const {
   grantGiftAccess,
   revokeAccess,
   listEntitlements,
+  listUsers,
   isAdmin,
   isOwner
 } = require('../services/access');
@@ -30,6 +31,15 @@ router.get('/admin/entitlements', requireAdmin, (req, res) => {
     data: {
       entitlements: listEntitlements(),
       is_owner: isOwner(req.telegramUser.id)
+    }
+  });
+});
+
+router.get('/admin/users', requireAdmin, (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      users: listUsers()
     }
   });
 });

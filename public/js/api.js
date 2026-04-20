@@ -79,6 +79,10 @@ var api = (function() {
       return request('GET', '/api/admin/entitlements');
     },
 
+    getAdminUsers: function() {
+      return request('GET', '/api/admin/users');
+    },
+
     grantAccess: function(data) {
       return request('POST', '/api/admin/entitlements', data);
     },

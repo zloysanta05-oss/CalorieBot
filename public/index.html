@@ -30,9 +30,28 @@
         </button>
       </div>
 
-      <div id="text-input-area" class="hidden">
+      <div id="text-input-area" class="text-input-panel hidden">
         <textarea class="textarea" id="food-description" placeholder="Опишите блюдо, например: «гречка с курицей и салат из помидоров»" maxlength="500"></textarea>
-        <div style="margin-top:8px">
+        <div class="voice-row">
+          <button class="voice-btn hidden" id="btn-voice-description" type="button" aria-label="Голосовой ввод" title="Голосовой ввод">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/>
+              <path d="M5 11a7 7 0 0 0 14 0"/>
+              <path d="M12 18v3"/>
+              <path d="M8 21h8"/>
+            </svg>
+          </button>
+          <div class="voice-meter hidden" id="voice-meter" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="voice-status hidden" id="voice-status">Слушаю...</span>
+        </div>
+        <div class="analyze-text-actions">
           <button class="btn btn-primary" id="btn-analyze-text">Анализировать</button>
         </div>
       </div>
@@ -199,7 +218,14 @@
         <input type="text" class="input" id="admin-note" placeholder="Например: друг">
         <button class="btn btn-primary" id="btn-grant-access">Выдать доступ</button>
       </div>
-      <div class="admin-list" id="admin-entitlements"></div>
+      <div class="admin-subsection">
+        <div class="admin-subsection-title">Пользователи</div>
+        <div class="admin-list" id="admin-users"></div>
+      </div>
+      <div class="admin-subsection">
+        <div class="admin-subsection-title">Выданные доступы</div>
+        <div class="admin-list" id="admin-entitlements"></div>
+      </div>
     </div>
   </div>
 
