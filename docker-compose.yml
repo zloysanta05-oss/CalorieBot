@@ -21,6 +21,20 @@ services:
       retries: 3
       start_period: 10s
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: caloriebot-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
   # Optional: auto-update the container when new image is pushed
   watchtower:
     image: containrrr/watchtower
@@ -37,3 +51,5 @@ services:
 
 volumes:
   caloriebot-data:
+  caddy-data:
+  caddy-config:
