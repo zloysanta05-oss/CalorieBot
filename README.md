@@ -43,21 +43,21 @@ cal/
 │       ├── openai.js      # Клиент OpenAI
 │       └── nutrition.js   # Промпт и парсер ответа AI
 ├── public/
-│   ├── index.html        #SPA с тремя вкладками
-│   ├── css/style.css     #Стили с Telegram theme variables
+│   ├── index.html        # SPA с тремя вкладками
+│   ├── css/style.css     # Стили с Telegram theme variables
 │   └── js/
-│       ├── api.js        #API клиент
-│       ├── app.js         #Инициализация, роутинг вкладок
-│       ├── analyze.js    #Логика вкладки «Анализ»
-│       ├── diary.js      #Логика вкладки «Дневник»
-│       ├── stats.js      #Логика вкладки «Статистика»
-│       └── utils.js      #Утилиты (форматирование даты, toast, haptic)
-├── data/                  #SQLite база (app.sqlite)
-├── Dockerfile             #Образ для деплоя
-├── docker-compose.yml     #Контейнер с app + watchtower
-├── .env                  #Переменные окружения (секреты)
-├── .env.example          #Пример .env
-├── .env.production       #Шаблон для продакшена
+│       ├── api.js        # API клиент
+│       ├── app.js        # Инициализация, роутинг вкладок
+│       ├── analyze.js    # Логика вкладки «Анализ»
+│       ├── diary.js      # Логика вкладки «Дневник»
+│       ├── stats.js      # Логика вкладки «Статистика»
+│       └── utils.js      # Утилиты (форматирование даты, toast, haptic)
+├── data/                  # SQLite база при локальном запуске (app.sqlite)
+├── Dockerfile             # Образ для деплоя
+├── docker-compose.yml     # Контейнер с app + watchtower
+├── .env                   # Переменные окружения (секреты)
+├── .env.example           # Пример .env
+├── .env.production        # Шаблон для продакшена
 └── package.json
 ```
 
@@ -101,7 +101,15 @@ docker compose up -d --build
 
 # Проверка
 curl http://localhost:3000
+
+# Логи
+docker compose logs -f app
+
+# Остановка
+docker compose down
 ```
+
+В Docker база SQLite хранится в named volume `caloriebot-data`. Это избавляет от проблем с правами на bind mount при запуске контейнера от non-root пользователя. Чтобы удалить контейнеры вместе с базой, используйте `docker compose down -v`.
 
 ### Telegram Mini App
 
@@ -175,6 +183,8 @@ OPENAI_MODEL=gpt-4o
 
 ## Автодеплой (watchtower)
 
+Watchtower имеет смысл, если контейнер `app` использует опубликованный Docker-образ из registry. Для локально собранного образа через `build:` он не сможет подтянуть новую версию сам по себе.
+
 ```bash
 # Запуск с авто-обновлением
 docker compose --profile auto-update up -d
@@ -197,7 +207,7 @@ docker compose --profile auto-update up -d
 
 ## База данных
 
-SQLite хранится в `data/app.sqlite`. Схема:
+При локальном запуске SQLite хранится в `data/app.sqlite`. При Docker-запуске файл лежит внутри named volume `caloriebot-data` по пути `/app/data/app.sqlite`. Схема:
 
 ```sql
 -- Приёмы пищи

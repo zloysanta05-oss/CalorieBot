@@ -13,7 +13,7 @@ services:
       - .env
     volumes:
       # Persist SQLite database
-      - ./data:/app/data
+      - caloriebot-data:/app/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
       interval: 30s
@@ -33,4 +33,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     profiles:
       - auto-update
-    command: --include-restarting app
+    command: --include-restarting caloriebot
+
+volumes:
+  caloriebot-data:

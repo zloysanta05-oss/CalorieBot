@@ -2,8 +2,9 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# better-sqlite3 requires native compilation tools
-RUN apk add --no-cache python3 make g++
+# better-sqlite3 requires native compilation tools, and libstdc++ is needed at runtime.
+RUN apk add --no-cache libstdc++ \
+  && apk add --no-cache --virtual .build-deps python3 make g++
 
 # Create non-root user early
 RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
@@ -13,7 +14,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # Remove build tools after native modules are compiled
-RUN apk del python3 make g++
+RUN apk del .build-deps
 
 # Copy application files
 COPY server/ ./server/
