@@ -37,6 +37,49 @@ db.exec(`
     daily_calories REAL NOT NULL DEFAULT 2000,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS entitlements (
+    telegram_id INTEGER PRIMARY KEY,
+    type TEXT NOT NULL DEFAULT 'gifted',
+    granted_by INTEGER,
+    expires_at TEXT,
+    note TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS usage_daily (
+    telegram_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    analysis_count INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (telegram_id, date)
+  );
+
+  CREATE TABLE IF NOT EXISTS monetization_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    premium_stars INTEGER NOT NULL DEFAULT 100,
+    free_daily_limit INTEGER NOT NULL DEFAULT 3,
+    updated_by INTEGER,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  INSERT OR IGNORE INTO monetization_settings (id, premium_stars, free_daily_limit)
+  VALUES (1, 100, 3);
+
+  CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER NOT NULL,
+    payload TEXT NOT NULL UNIQUE,
+    plan TEXT NOT NULL DEFAULT 'premium_month',
+    amount_stars INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    telegram_payment_charge_id TEXT,
+    provider_payment_charge_id TEXT,
+    raw_payment TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    paid_at TEXT
+  );
 `);
 
 module.exports = db;

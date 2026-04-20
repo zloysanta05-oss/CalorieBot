@@ -69,6 +69,38 @@ var api = (function() {
 
     getWeekStats: function() {
       return request('GET', '/api/stats?period=week');
+    },
+
+    getAccess: function() {
+      return request('GET', '/api/access');
+    },
+
+    getEntitlements: function() {
+      return request('GET', '/api/admin/entitlements');
+    },
+
+    grantAccess: function(data) {
+      return request('POST', '/api/admin/entitlements', data);
+    },
+
+    revokeAccess: function(telegramId) {
+      return request('DELETE', '/api/admin/entitlements/' + encodeURIComponent(telegramId));
+    },
+
+    getMonetization: function() {
+      return request('GET', '/api/monetization');
+    },
+
+    createSubscriptionInvoice: function() {
+      return request('POST', '/api/payments/subscription-invoice', {});
+    },
+
+    getMonetizationSettings: function() {
+      return request('GET', '/api/admin/monetization');
+    },
+
+    updateMonetizationSettings: function(data) {
+      return request('PUT', '/api/admin/monetization', data);
     }
   };
 })();

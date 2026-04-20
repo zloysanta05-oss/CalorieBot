@@ -52,9 +52,15 @@ OPENAI_BASE_URL=https://routerai.ru/api/v1
 OPENAI_MODEL=openai/gpt-5.4-nano
 PORT=3000
 NODE_ENV=production
+OWNER_TELEGRAM_ID=your_telegram_id
+ADMIN_TELEGRAM_IDS=friend_admin_id,another_admin_id
 ```
 
 `OPENAI_MODEL` в коде необязателен, но в продакшене удобнее держать модель явно в `.env`.
+
+`OWNER_TELEGRAM_ID` получает бесплатный Premium-доступ навсегда. `ADMIN_TELEGRAM_IDS` могут выдавать и отзывать бесплатный доступ друзьям из админского блока в приложении.
+
+Telegram ID владельца можно узнать через служебных ботов вроде `@userinfobot`. Используйте именно числовой ID, не username.
 
 ## 4. Настройте домен
 
@@ -65,6 +71,12 @@ cal.example.com -> YOUR_VPS_IP
 ```
 
 Затем откройте `Caddyfile` и замените `cal.example.com` на ваш реальный домен.
+
+Если домен меняется уже после запуска контейнеров, перезапустите Caddy:
+
+```bash
+docker compose restart caddy
+```
 
 ## 5. Проверьте Caddy
 
@@ -118,6 +130,28 @@ https://cal.example.com
 ```
 
 Telegram требует HTTPS, поэтому дождитесь, пока Caddy успешно выпустит сертификат.
+
+## 8. Настройте webhook платежей
+
+Чтобы Telegram присылал подтверждения платежей Stars, настройте webhook бота:
+
+```bash
+curl "https://api.telegram.org/bot<ТОКЕН>/setWebhook?url=https://cal.example.com/telegram/webhook"
+```
+
+Вместо `<ТОКЕН>` и `cal.example.com` используйте свои значения.
+
+Проверьте webhook:
+
+```bash
+curl "https://api.telegram.org/bot<ТОКЕН>/getWebhookInfo"
+```
+
+В ответе `url` должен быть `https://cal.example.com/telegram/webhook`, а `last_error_message` должен отсутствовать.
+
+Цена Premium и дневной бесплатный лимит задаются владельцем/админом внутри приложения: вкладка «Статистика» → блок «Админ».
+
+Если webhook не настроить, пользователь сможет открыть окно оплаты, но Premium-доступ не будет выдан после платежа.
 
 ## Полезные команды
 
@@ -194,6 +228,18 @@ docker compose up -d
 - Убедитесь, что установлено `NODE_ENV=production`.
 - Открывайте приложение через Telegram Mini App, а не напрямую в браузере.
 - Проверьте, что `BOT_TOKEN` относится к тому же боту, который выбран в BotFather.
+
+Если админский блок не появляется:
+
+- Проверьте `OWNER_TELEGRAM_ID` в `.env`.
+- Убедитесь, что это числовой Telegram ID, а не username.
+- Перезапустите контейнеры после изменения `.env`: `docker compose up -d`.
+
+Если платеж прошел, но Premium не выдался:
+
+- Проверьте webhook: `curl "https://api.telegram.org/bot<ТОКЕН>/getWebhookInfo"`.
+- Посмотрите логи приложения: `docker compose logs -f app`.
+- Убедитесь, что домен в webhook совпадает с доменом Mini App.
 
 Если не работает AI-анализ:
 

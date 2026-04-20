@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { analyzeImage, analyzeText } = require('../services/openai');
+const { assertCanAnalyze, recordAnalysis } = require('../services/monetization');
 
 const router = express.Router();
 const upload = multer({
@@ -10,6 +11,8 @@ const upload = multer({
 
 router.post('/analyze-photo', upload.single('photo'), async (req, res) => {
   try {
+    assertCanAnalyze(req.telegramUser.id);
+
     let base64Data, mimeType;
 
     if (req.file) {
@@ -28,8 +31,18 @@ router.post('/analyze-photo', upload.single('photo'), async (req, res) => {
       return res.json({ success: false, error: result.error, message: result.message });
     }
 
-    res.json({ success: true, data: result });
+    const usage = recordAnalysis(req.telegramUser.id);
+    res.json({ success: true, data: result, usage });
   } catch (err) {
+    if (err.code === 'free_limit_reached') {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: err.code,
+        message: 'Бесплатный лимит на сегодня исчерпан. Оформите Premium, чтобы продолжить.',
+        data: err.plan
+      });
+    }
+
     console.error('Photo analysis error:', err.message);
     res.status(502).json({
       success: false,
@@ -41,6 +54,8 @@ router.post('/analyze-photo', upload.single('photo'), async (req, res) => {
 
 router.post('/analyze-text', async (req, res) => {
   try {
+    assertCanAnalyze(req.telegramUser.id);
+
     const { description } = req.body || {};
 
     if (!description || typeof description !== 'string' || description.trim().length === 0) {
@@ -57,8 +72,18 @@ router.post('/analyze-text', async (req, res) => {
       return res.json({ success: false, error: result.error, message: result.message });
     }
 
-    res.json({ success: true, data: result });
+    const usage = recordAnalysis(req.telegramUser.id);
+    res.json({ success: true, data: result, usage });
   } catch (err) {
+    if (err.code === 'free_limit_reached') {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: err.code,
+        message: 'Бесплатный лимит на сегодня исчерпан. Оформите Premium, чтобы продолжить.',
+        data: err.plan
+      });
+    }
+
     console.error('Text analysis error:', err.message);
     res.status(502).json({
       success: false,

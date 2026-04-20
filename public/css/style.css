@@ -176,6 +176,14 @@ body {
   border-color: var(--link);
 }
 
+.field-label {
+  display: block;
+  margin: 2px 0 -3px;
+  color: var(--hint);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .textarea {
   resize: vertical;
   min-height: 80px;
@@ -704,6 +712,102 @@ body {
 .goal-input-row .btn {
   width: auto;
   flex-shrink: 0;
+}
+
+/* Access and admin */
+.access-section,
+.admin-section {
+  background: var(--section-bg);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.access-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.premium-actions {
+  margin-top: 12px;
+}
+
+.access-status h3,
+.admin-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.access-status p {
+  font-size: 13px;
+  color: var(--hint);
+}
+
+.access-badge {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.08);
+  color: var(--hint);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.access-badge.premium {
+  background: rgba(232,168,56,0.18);
+  color: #a66b00;
+}
+
+.admin-form {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.admin-pricing {
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  margin-bottom: 14px;
+}
+
+.admin-save-btn {
+  margin-top: 2px;
+  background: rgba(36,129,204,0.1);
+  font-weight: 700;
+}
+
+.admin-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.admin-row-main {
+  min-width: 0;
+}
+
+.admin-row-id {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.admin-row-meta,
+.admin-empty {
+  font-size: 12px;
+  color: var(--hint);
 }
 
 /* Toast */
