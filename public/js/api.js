@@ -1,9 +1,10 @@
-// API client with Telegram initData header
+// API-клиент добавляет Telegram initData в каждый запрос Mini App.
 
 var api = (function() {
   var tg = window.Telegram && window.Telegram.WebApp;
   var initData = tg ? tg.initData : '';
 
+  // Общая обертка над fetch: JSON-сериализация и единая обработка ошибок.
   function request(method, url, body, isFormData) {
     var headers = {};
     if (initData) {
@@ -33,16 +34,19 @@ var api = (function() {
   }
 
   return {
+    // Анализ фото отправляется multipart/form-data.
     analyzePhoto: function(file) {
       var formData = new FormData();
       formData.append('photo', file);
       return request('POST', '/api/analyze-photo', formData, true);
     },
 
+    // Анализ текстового описания блюда.
     analyzeText: function(description) {
       return request('POST', '/api/analyze-text', { description: description });
     },
 
+    // Дневник питания.
     saveMeal: function(data) {
       return request('POST', '/api/meals', data);
     },
@@ -55,6 +59,7 @@ var api = (function() {
       return request('DELETE', '/api/meals/' + id);
     },
 
+    // Цели, статистика и монетизация.
     getGoals: function() {
       return request('GET', '/api/goals');
     },
@@ -63,14 +68,23 @@ var api = (function() {
       return request('PUT', '/api/goals', { daily_calories: dailyCalories });
     },
 
-    getStats: function(period) {
-      return request('GET', '/api/stats?period=' + encodeURIComponent(period || 'day'));
+    getStats: function(period, date) {
+      var url = '/api/stats?period=' + encodeURIComponent(period || 'day');
+      if (date) {
+        url += '&date=' + encodeURIComponent(date);
+      }
+      return request('GET', url);
     },
 
-    getWeekStats: function() {
-      return request('GET', '/api/stats?period=week');
+    getWeekStats: function(from, to) {
+      var url = '/api/stats?period=week';
+      if (from && to) {
+        url += '&from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to);
+      }
+      return request('GET', url);
     },
 
+    // Админские методы доступа и пользователей.
     getAccess: function() {
       return request('GET', '/api/access');
     },
@@ -91,6 +105,7 @@ var api = (function() {
       return request('DELETE', '/api/admin/entitlements/' + encodeURIComponent(telegramId));
     },
 
+    // Telegram Stars подписка.
     getMonetization: function() {
       return request('GET', '/api/monetization');
     },

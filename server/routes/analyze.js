@@ -4,11 +4,14 @@ const { analyzeImage, analyzeText } = require('../services/openai');
 const { assertCanAnalyze, recordAnalysis } = require('../services/monetization');
 
 const router = express.Router();
+
+// Загружаем фото в память: файл сразу передается в AI и не пишется на диск.
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
+// Анализ фото блюда. Free-лимит проверяется до вызова AI.
 router.post('/analyze-photo', upload.single('photo'), async (req, res) => {
   try {
     assertCanAnalyze(req.telegramUser.id);
@@ -52,6 +55,7 @@ router.post('/analyze-photo', upload.single('photo'), async (req, res) => {
   }
 });
 
+// Анализ текстового описания блюда. Используется тот же лимит, что и для фото.
 router.post('/analyze-text', async (req, res) => {
   try {
     assertCanAnalyze(req.telegramUser.id);

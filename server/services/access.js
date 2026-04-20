@@ -1,5 +1,6 @@
 const db = require('../db');
 
+// Активный entitlement дает пользователю Premium-доступ или подаренный доступ.
 const getEntitlement = db.prepare(`
   SELECT *
   FROM entitlements
@@ -43,6 +44,7 @@ const upsertGiftEntitlement = db.prepare(`
 
 const deleteEntitlement = db.prepare('DELETE FROM entitlements WHERE telegram_id = ?');
 
+// ENV-переменные с Telegram ID хранятся строкой через запятую.
 function parseIdList(value) {
   return String(value || '')
     .split(',')
@@ -50,6 +52,7 @@ function parseIdList(value) {
     .filter(Number.isFinite);
 }
 
+// Владелец всегда имеет Premium и права администратора.
 function getOwnerId() {
   const ownerId = Number(process.env.OWNER_TELEGRAM_ID);
   if (Number.isFinite(ownerId) && ownerId > 0) return ownerId;
@@ -61,6 +64,7 @@ function getOwnerId() {
   return null;
 }
 
+// Админы могут менять цены, лимиты и выдавать/отзывать бесплатный доступ.
 function getAdminIds() {
   const ids = new Set(parseIdList(process.env.ADMIN_TELEGRAM_IDS));
   const ownerId = getOwnerId();
@@ -109,10 +113,12 @@ function getAccessStatus(userId) {
   };
 }
 
+// SQLite хранит даты в формате YYYY-MM-DD HH:mm:ss.
 function formatSqliteDate(date) {
   return date.toISOString().slice(0, 19).replace('T', ' ');
 }
 
+// Выдача подаренного доступа: на срок или бессрочно.
 function grantGiftAccess(telegramId, grantedBy, days, note) {
   const userId = Number(telegramId);
   if (!Number.isFinite(userId) || userId <= 0) {
@@ -141,6 +147,7 @@ function grantGiftAccess(telegramId, grantedBy, days, note) {
   return getEntitlement.get(userId);
 }
 
+// Отзыв доступа удаляет entitlement, но не удаляет самого пользователя.
 function revokeAccess(telegramId) {
   const userId = Number(telegramId);
   if (!Number.isFinite(userId) || userId <= 0) {
@@ -155,6 +162,7 @@ function listEntitlements() {
 }
 
 function listUsers() {
+  // Для списка пользователей дополнительно вычисляем owner/admin/Premium статус.
   return listUsersStmt.all().map(user => {
     const access = getAccessStatus(user.telegram_id);
     return {

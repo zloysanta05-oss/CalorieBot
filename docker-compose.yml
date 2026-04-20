@@ -12,7 +12,7 @@ services:
     env_file:
       - .env
     volumes:
-      # Persist SQLite database
+      # Храним SQLite-базу в named volume
       - caloriebot-data:/app/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
@@ -35,7 +35,7 @@ services:
     depends_on:
       - app
 
-  # Optional: auto-update the container when new image is pushed
+  # Опциональное автообновление контейнера из опубликованного образа
   watchtower:
     image: containrrr/watchtower
     container_name: watchtower

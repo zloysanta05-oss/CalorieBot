@@ -1,10 +1,11 @@
-// Diary tab logic
+// Логика вкладки «Дневник».
 
 var diaryTab = (function() {
   var currentDate = todayStr();
   var currentGoal = 2000;
 
   function init() {
+    // Навигация по датам и удаление записей из дневника.
     document.getElementById('date-prev').addEventListener('click', function() {
       currentDate = addDays(currentDate, -1);
       render();
@@ -32,6 +33,7 @@ var diaryTab = (function() {
   }
 
   function show() {
+    // При открытии вкладки показываем сегодняшний день.
     currentDate = todayStr();
     render();
   }
@@ -52,6 +54,7 @@ var diaryTab = (function() {
   }
 
   function loadMeals() {
+    // Данные дневника и цель калорий загружаются параллельно.
     Promise.all([
       api.getMeals(currentDate),
       api.getGoals()
@@ -69,6 +72,7 @@ var diaryTab = (function() {
   }
 
   function renderMeals(meals, totals) {
+    // Пустое состояние и дневные итоги.
     var listEl = document.getElementById('diary-list');
     var emptyEl = document.getElementById('diary-empty');
     var totalsEl = document.getElementById('diary-totals');
@@ -83,7 +87,7 @@ var diaryTab = (function() {
     emptyEl.classList.add('hidden');
     totalsEl.classList.remove('hidden');
 
-    // Show totals
+    // Отображение суммарных калорий и прогресса к цели.
     document.getElementById('diary-total-cals').textContent = Math.round(totals.calories) + ' ккал';
     document.getElementById('diary-total-goal').textContent = 'из ' + currentGoal + ' ккал';
 
@@ -92,7 +96,7 @@ var diaryTab = (function() {
     progressEl.style.width = pct + '%';
     progressEl.className = 'progress-fill' + (pct > 100 ? ' over' : '');
 
-    // Group by meal type
+    // Группировка записей по типам приема пищи.
     var groups = { breakfast: [], lunch: [], dinner: [], snack: [] };
     meals.forEach(function(m) {
       var type = groups[m.meal_type] ? m.meal_type : 'snack';
@@ -129,6 +133,7 @@ var diaryTab = (function() {
   }
 
   function escapeHtml(text) {
+    // Экранируем пользовательские данные перед вставкой через innerHTML.
     var div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;

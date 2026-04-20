@@ -1,4 +1,4 @@
-// Stats tab logic
+// Логика вкладки «Статистика», Premium и админки.
 
 var statsTab = (function() {
   var currentGoal = 2000;
@@ -6,6 +6,7 @@ var statsTab = (function() {
   var currentMonetization = null;
 
   function init() {
+    // Сохранение дневной цели калорий.
     document.getElementById('btn-save-goal').addEventListener('click', function() {
       var val = parseInt(document.getElementById('goal-input').value, 10);
       if (!val || val < 500 || val > 10000) {
@@ -27,6 +28,7 @@ var statsTab = (function() {
     });
 
     document.getElementById('btn-save-monetization').addEventListener('click', function() {
+      // Админ задает цену Premium и дневной бесплатный лимит.
       var premiumStars = parseInt(document.getElementById('admin-premium-stars').value, 10);
       var freeLimit = parseInt(document.getElementById('admin-free-limit').value, 10);
 
@@ -53,6 +55,7 @@ var statsTab = (function() {
     });
 
     document.getElementById('btn-grant-access').addEventListener('click', function() {
+      // Админ может выдать доступ по числовому Telegram ID.
       var telegramId = parseInt(document.getElementById('admin-telegram-id').value, 10);
       var daysRaw = document.getElementById('admin-days').value;
       var note = document.getElementById('admin-note').value.trim();
@@ -79,6 +82,7 @@ var statsTab = (function() {
     });
 
     document.getElementById('admin-entitlements').addEventListener('click', function(e) {
+      // Отзыв выданного доступа.
       var btn = e.target.closest('.admin-revoke');
       if (!btn) return;
 
@@ -92,6 +96,7 @@ var statsTab = (function() {
     });
 
     document.getElementById('admin-users').addEventListener('click', function(e) {
+      // Тап по пользователю подставляет его ID в форму выдачи доступа.
       var row = e.target.closest('.admin-user-row');
       if (!row) return;
 
@@ -106,9 +111,13 @@ var statsTab = (function() {
   }
 
   function loadStats() {
+    // Основные данные вкладки грузятся параллельно, чтобы UI быстрее обновлялся.
+    var today = todayStr();
+    var weekFrom = addDays(today, -6);
+
     Promise.all([
-      api.getStats('day'),
-      api.getWeekStats(),
+      api.getStats('day', today),
+      api.getWeekStats(weekFrom, today),
       api.getGoals(),
       api.getMonetization()
     ]).then(function(results) {
@@ -131,6 +140,7 @@ var statsTab = (function() {
   }
 
   function renderAccess(plan) {
+    // Блок доступа показывает free-остаток или текущий Premium-статус.
     var data = plan.access;
     var usage = plan.usage;
     var settings = plan.settings;
@@ -170,6 +180,7 @@ var statsTab = (function() {
   }
 
   function buyPremium() {
+    // Создаем invoice на сервере и открываем его через Telegram WebApp.
     var btn = document.getElementById('btn-buy-premium');
     btn.disabled = true;
 
@@ -227,6 +238,7 @@ var statsTab = (function() {
   }
 
   function loadAdminUsers() {
+    // Список пользователей строится из таблицы users, обновляемой auth middleware.
     if (!currentAccess || !currentAccess.is_admin) return;
 
     api.getAdminUsers().then(function(res) {
@@ -288,12 +300,14 @@ var statsTab = (function() {
   }
 
   function escapeHtml(text) {
+    // Экранирование строк перед HTML-вставкой.
     var div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
   function renderDayStats(data) {
+    // Круговой прогресс, остаток калорий и сегодняшние БЖУ.
     var totals = data.totals || { calories: 0, protein: 0, fat: 0, carbs: 0 };
     var goal = data.goal || currentGoal;
     var cals = Math.round(totals.calories);
@@ -318,6 +332,7 @@ var statsTab = (function() {
   }
 
   function renderWeekChart(data) {
+    // Недельный график сравнивает каждый день с текущей целью.
     var days = data.days || [];
     var goal = data.goal || currentGoal;
     var container = document.getElementById('week-chart-bars');

@@ -11,6 +11,7 @@ const {
 
 const router = express.Router();
 
+// Все admin endpoints доступны только владельцу или ID из ADMIN_TELEGRAM_IDS.
 function requireAdmin(req, res, next) {
   if (!isAdmin(req.telegramUser.id)) {
     return res.status(403).json({ success: false, error: 'Forbidden' });
@@ -18,6 +19,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Текущий статус доступа пользователя: free, owner, gifted или subscription.
 router.get('/access', (req, res) => {
   res.json({
     success: true,
@@ -25,6 +27,7 @@ router.get('/access', (req, res) => {
   });
 });
 
+// Список выданных доступов для админки.
 router.get('/admin/entitlements', requireAdmin, (req, res) => {
   res.json({
     success: true,
@@ -35,6 +38,7 @@ router.get('/admin/entitlements', requireAdmin, (req, res) => {
   });
 });
 
+// Список пользователей, которые уже открывали Mini App или вызывали API.
 router.get('/admin/users', requireAdmin, (req, res) => {
   res.json({
     success: true,
@@ -44,6 +48,7 @@ router.get('/admin/users', requireAdmin, (req, res) => {
   });
 });
 
+// Выдача бесплатного доступа другу/тестеру.
 router.post('/admin/entitlements', requireAdmin, (req, res) => {
   try {
     const { telegram_id, days, note } = req.body || {};
@@ -55,6 +60,7 @@ router.post('/admin/entitlements', requireAdmin, (req, res) => {
   }
 });
 
+// Отзыв бесплатного или subscription entitlement.
 router.delete('/admin/entitlements/:telegramId', requireAdmin, (req, res) => {
   try {
     revokeAccess(req.params.telegramId);

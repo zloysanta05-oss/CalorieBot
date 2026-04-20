@@ -15,6 +15,7 @@ const {
 
 const router = express.Router();
 
+// Настройки монетизации может менять только администратор.
 function requireAdmin(req, res, next) {
   if (!isAdmin(req.telegramUser.id)) {
     return res.status(403).json({ success: false, error: 'Forbidden' });
@@ -22,6 +23,7 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// Статус freemium/Premium для текущего пользователя и данные для UI.
 router.get('/monetization', (req, res) => {
   res.json({
     success: true,
@@ -29,6 +31,7 @@ router.get('/monetization', (req, res) => {
   });
 });
 
+// Создает Telegram Stars invoice для Premium-подписки.
 router.post('/payments/subscription-invoice', async (req, res) => {
   try {
     const intent = createPaymentIntent(req.telegramUser.id, 'premium_month');
@@ -52,10 +55,12 @@ router.post('/payments/subscription-invoice', async (req, res) => {
   }
 });
 
+// Получение текущих цен и лимитов для админки.
 router.get('/admin/monetization', requireAdmin, (req, res) => {
   res.json({ success: true, data: getSettings() });
 });
 
+// Сохранение цены Premium и дневного free-лимита.
 router.put('/admin/monetization', requireAdmin, (req, res) => {
   try {
     const settings = updateSettings(req.body || {}, req.telegramUser.id);
@@ -65,6 +70,7 @@ router.put('/admin/monetization', requireAdmin, (req, res) => {
   }
 });
 
+// Webhook Telegram: подтверждает запрос перед оплатой и выдает Premium после successful_payment.
 async function telegramWebhook(req, res) {
   const update = req.body || {};
 

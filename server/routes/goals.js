@@ -10,6 +10,7 @@ const upsertGoal = db.prepare(`
   ON CONFLICT(telegram_id) DO UPDATE SET daily_calories = excluded.daily_calories, updated_at = datetime('now')
 `);
 
+// Возвращаем индивидуальную цель или дефолт 2000 ккал.
 router.get('/goals', (req, res) => {
   try {
     const userId = req.telegramUser.id;
@@ -25,6 +26,7 @@ router.get('/goals', (req, res) => {
   }
 });
 
+// Сохраняем дневную цель с базовой валидацией разумного диапазона.
 router.put('/goals', (req, res) => {
   try {
     const userId = req.telegramUser.id;

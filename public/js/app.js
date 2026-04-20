@@ -1,9 +1,9 @@
-// App initialization and tab routing
+// Инициализация Telegram Mini App и переключение вкладок.
 
 (function() {
   var tg = window.Telegram && window.Telegram.WebApp;
 
-  // Initialize Telegram WebApp
+  // Сообщаем Telegram, что Mini App готов, и разворачиваем его на всю высоту.
   if (tg) {
     tg.ready();
     tg.expand();
@@ -13,12 +13,12 @@
     }
   }
 
-  // Init all tabs
+  // Инициализация модулей вкладок.
   analyzeTab.init();
   diaryTab.init();
   statsTab.init();
 
-  // Tab switching
+  // Простая маршрутизация между тремя вкладками SPA.
   var tabItems = document.querySelectorAll('.tab-bar-item');
   var tabContents = document.querySelectorAll('.tab-content');
 
@@ -50,7 +50,7 @@
     }
   }
 
-  // Telegram Back Button
+  // Кнопка Back в Telegram возвращает пользователя на вкладку анализа.
   if (tg && tg.BackButton) {
     tg.BackButton.onClick(function() {
       switchTab('tab-analyze');

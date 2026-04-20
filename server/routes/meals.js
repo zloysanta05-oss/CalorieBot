@@ -3,6 +3,7 @@ const db = require('../db');
 
 const router = express.Router();
 
+// Подготовленные SQLite statements для операций дневника питания.
 const insertMeal = db.prepare(`
   INSERT INTO meals (telegram_id, date, meal_type, description, calories, protein, fat, carbs, portion_grams, source, image_data)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -20,6 +21,7 @@ const deleteMealById = db.prepare(`
   DELETE FROM meals WHERE id = ? AND telegram_id = ?
 `);
 
+// Сохранение приема пищи после анализа или ручной правки результата.
 router.post('/meals', (req, res) => {
   try {
     const userId = req.telegramUser.id;
@@ -65,6 +67,7 @@ router.post('/meals', (req, res) => {
   }
 });
 
+// Получение записей за день вместе с дневными итогами КБЖУ.
 router.get('/meals', (req, res) => {
   try {
     const userId = req.telegramUser.id;
@@ -86,6 +89,7 @@ router.get('/meals', (req, res) => {
   }
 });
 
+// Удаление записи разрешено только владельцу этой записи.
 router.delete('/meals/:id', (req, res) => {
   try {
     const userId = req.telegramUser.id;

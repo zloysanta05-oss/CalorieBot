@@ -2,35 +2,35 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# better-sqlite3 requires native compilation tools, and libstdc++ is needed at runtime.
+# better-sqlite3 нужны инструменты сборки, а libstdc++ остается для запуска.
 RUN apk add --no-cache libstdc++ \
   && apk add --no-cache --virtual .build-deps python3 make g++
 
-# Create non-root user early
+# Создаем непривилегированного пользователя для запуска приложения
 RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
 
-# Install dependencies first (layer cache optimization)
+# Сначала ставим зависимости, чтобы Docker лучше кэшировал слои
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Remove build tools after native modules are compiled
+# Удаляем инструменты сборки после компиляции native-модулей
 RUN apk del .build-deps
 
-# Copy application files
+# Копируем код приложения
 COPY server/ ./server/
 COPY public/ ./public/
 
-# Create data directory with correct ownership
+# Создаем директорию данных с правами appuser
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data
 
-# Expose port
+# Порт Express-сервера
 EXPOSE 3000
 
-# Health check
+# Проверка здоровья контейнера
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget -qO- http://localhost:3000/ || exit 1
 
-# Switch to non-root user
+# Запускаем приложение не от root
 USER appuser
 
 CMD ["node", "server/index.js"]

@@ -3,6 +3,7 @@ const db = require('../db');
 
 const router = express.Router();
 
+// Агрегация статистики за конкретный день.
 const getDayTotals = db.prepare(`
   SELECT
     date,
@@ -16,6 +17,7 @@ const getDayTotals = db.prepare(`
   GROUP BY date
 `);
 
+// Агрегация статистики за диапазон дат.
 const getWeekTotals = db.prepare(`
   SELECT
     date,
@@ -32,6 +34,7 @@ const getWeekTotals = db.prepare(`
 
 const getGoal = db.prepare('SELECT daily_calories FROM goals WHERE telegram_id = ?');
 
+// Универсальный endpoint статистики: day по умолчанию или week/from-to.
 router.get('/stats', (req, res) => {
   try {
     const userId = req.telegramUser.id;

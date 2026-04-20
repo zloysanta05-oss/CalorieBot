@@ -1,5 +1,6 @@
-// Utility functions
+// Общие утилиты для изображения, дат, toast-уведомлений и haptic feedback.
 
+// Сжимаем изображение на клиенте перед отправкой в AI.
 function compressImage(file, maxWidth, quality) {
   maxWidth = maxWidth || 1024;
   quality = quality || 0.7;
@@ -33,6 +34,7 @@ function compressImage(file, maxWidth, quality) {
   });
 }
 
+// Форматирование даты для дневника.
 function formatDate(dateStr) {
   var d = new Date(dateStr + 'T00:00:00');
   var months = [
@@ -43,12 +45,14 @@ function formatDate(dateStr) {
   return d.getDate() + ' ' + months[d.getMonth()] + ', ' + dayNames[d.getDay()];
 }
 
+// Короткая подпись дня недели для недельного графика.
 function formatShortDate(dateStr) {
   var d = new Date(dateStr + 'T00:00:00');
   var dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   return dayNames[d.getDay()];
 }
 
+// Локальная дата пользователя в формате YYYY-MM-DD.
 function todayStr() {
   var d = new Date();
   var y = d.getFullYear();
@@ -57,6 +61,7 @@ function todayStr() {
   return y + '-' + m + '-' + day;
 }
 
+// Сдвиг даты дневника на N дней.
 function addDays(dateStr, days) {
   var parts = dateStr.split('-');
   var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -67,6 +72,7 @@ function addDays(dateStr, days) {
   return y + '-' + m + '-' + day;
 }
 
+// Всплывающее уведомление в верхней части Mini App.
 function showToast(message, type) {
   type = type || 'success';
   var existing = document.querySelector('.toast');
@@ -84,6 +90,7 @@ function showToast(message, type) {
   }, 2500);
 }
 
+// Обертка над Telegram HapticFeedback.
 function haptic(type) {
   var tg = window.Telegram && window.Telegram.WebApp;
   if (tg && tg.HapticFeedback) {
@@ -99,6 +106,7 @@ function haptic(type) {
   }
 }
 
+// Подписи и иконки типов приема пищи.
 var MEAL_ICONS = {
   breakfast: '\uD83C\uDF05',
   lunch: '\u2600\uFE0F',

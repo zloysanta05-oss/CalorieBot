@@ -1,12 +1,14 @@
 const OpenAI = require('openai');
 const { buildPhotoMessages, buildTextMessages, parseNutritionResponse } = require('./nutrition');
 
+// Клиент OpenAI-совместимого API. По умолчанию используется routerai.ru.
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_BASE_URL || 'https://routerai.ru/api/v1'
 });
 const MODEL = process.env.OPENAI_MODEL || 'openai/gpt-5.4-nano';
 
+// Анализ изображения: отправляем base64 data URL и ожидаем JSON с КБЖУ.
 async function analyzeImage(base64Data, mimeType) {
   const messages = buildPhotoMessages(base64Data, mimeType || 'image/jpeg');
 
@@ -31,6 +33,7 @@ async function analyzeImage(base64Data, mimeType) {
   return result;
 }
 
+// Анализ текстового описания еды.
 async function analyzeText(description) {
   const messages = buildTextMessages(description);
 

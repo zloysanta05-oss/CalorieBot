@@ -1,3 +1,4 @@
+// Универсальный POST-вызов Telegram Bot API.
 async function callTelegram(method, body) {
   const botToken = process.env.BOT_TOKEN;
   if (!botToken) {
@@ -18,6 +19,7 @@ async function callTelegram(method, body) {
   return data.result;
 }
 
+// Создаем ссылку оплаты Premium через Telegram Stars.
 async function createStarsSubscriptionInvoice(intent) {
   return callTelegram('createInvoiceLink', {
     title: 'CalorieBot Premium',
@@ -30,6 +32,7 @@ async function createStarsSubscriptionInvoice(intent) {
   });
 }
 
+// Telegram требует ответить на pre_checkout_query перед завершением платежа.
 async function answerPreCheckoutQuery(id, ok, errorMessage) {
   return callTelegram('answerPreCheckoutQuery', {
     pre_checkout_query_id: id,

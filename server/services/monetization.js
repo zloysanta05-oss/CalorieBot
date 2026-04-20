@@ -2,7 +2,8 @@ const crypto = require('crypto');
 const db = require('../db');
 const { getAccessStatus } = require('./access');
 
-const SUBSCRIPTION_SECONDS = 2592000; // Telegram Stars subscriptions are monthly.
+// Период подписки Telegram Stars: 30 дней в секундах.
+const SUBSCRIPTION_SECONDS = 2592000; // Подписка Telegram Stars длится 30 дней.
 
 const getSettingsStmt = db.prepare('SELECT * FROM monetization_settings WHERE id = 1');
 const updateSettingsStmt = db.prepare(`
@@ -50,6 +51,7 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Приводим JS Date к формату SQLite datetime.
 function sqliteDate(date) {
   return date.toISOString().slice(0, 19).replace('T', ' ');
 }
@@ -58,6 +60,7 @@ function getSettings() {
   return getSettingsStmt.get() || { premium_stars: 100, free_daily_limit: 3 };
 }
 
+// Только админ может менять цену Premium и бесплатный дневной лимит.
 function updateSettings(input, adminId) {
   const premiumStars = Number(input.premium_stars);
   const freeDailyLimit = Number(input.free_daily_limit);
@@ -74,6 +77,7 @@ function updateSettings(input, adminId) {
   return getSettings();
 }
 
+// Возвращает, сколько бесплатных анализов пользователь уже потратил сегодня.
 function getUsage(userId, date) {
   const settings = getSettings();
   const row = getUsageStmt.get(Number(userId), date || todayStr());
@@ -86,6 +90,7 @@ function getUsage(userId, date) {
   };
 }
 
+// Единая модель доступа для UI: статус Premium, лимит, цена и can_analyze.
 function getPlanForUser(userId) {
   const access = getAccessStatus(userId);
   const settings = getSettings();
@@ -99,6 +104,7 @@ function getPlanForUser(userId) {
   };
 }
 
+// Проверка перед дорогим AI-вызовом: лимит должен отсеиваться до OpenAI.
 function assertCanAnalyze(userId) {
   const plan = getPlanForUser(userId);
   if (!plan.can_analyze) {
@@ -112,6 +118,7 @@ function assertCanAnalyze(userId) {
   return plan;
 }
 
+// Счетчик увеличивается только для free-пользователей.
 function recordAnalysis(userId) {
   const access = getAccessStatus(userId);
   if (access.has_premium) return getUsage(userId);
@@ -120,6 +127,7 @@ function recordAnalysis(userId) {
   return getUsage(userId);
 }
 
+// Создаем локальный pending-платеж перед созданием invoice в Telegram.
 function createPaymentIntent(userId, plan) {
   const settings = getSettings();
   const selectedPlan = plan || 'premium_month';
@@ -138,6 +146,7 @@ function createPaymentIntent(userId, plan) {
   };
 }
 
+// Запрос перед оплатой и successful_payment сверяются с локальным ожидающим платежом.
 function validatePaymentPayload(payload, currency, totalAmount) {
   const payment = getPaymentByPayloadStmt.get(payload);
   if (!payment || payment.status !== 'pending') {
@@ -155,6 +164,7 @@ function validatePaymentPayload(payload, currency, totalAmount) {
   return { ok: true, payment };
 }
 
+// Успешная оплата продлевает/выдает subscription entitlement.
 function markSuccessfulPayment(successfulPayment, fallbackUserId) {
   const validation = validatePaymentPayload(
     successfulPayment.invoice_payload,

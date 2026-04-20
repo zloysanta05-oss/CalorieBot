@@ -1,14 +1,15 @@
-// Analyze tab logic
+// Логика вкладки «Анализ»: фото, текст, голосовой ввод и сохранение результата.
 
 var analyzeTab = (function() {
   var currentResult = null;
   var currentPhotoBlob = null;
   var selectedMealType = 'lunch';
-  var inputSource = null; // 'photo' or 'text'
+  var inputSource = null; // Источник анализа: photo или text.
   var recognition = null;
   var isListening = false;
 
   function init() {
+    // Подключаем обработчики кнопок и полей вкладки анализа.
     var btnPhoto = document.getElementById('btn-photo');
     var btnTextMode = document.getElementById('btn-text-mode');
     var fileInput = document.getElementById('file-input');
@@ -63,7 +64,7 @@ var analyzeTab = (function() {
       saveMeal();
     });
 
-    // Meal type selector
+    // Выбор типа приема пищи для будущей записи в дневнике.
     document.getElementById('meal-type-selector').addEventListener('click', function(e) {
       var btn = e.target.closest('.meal-type-btn');
       if (!btn) return;
@@ -73,12 +74,13 @@ var analyzeTab = (function() {
       haptic('light');
     });
 
-    // Auto-select meal type based on time
+    // Автоматический выбор типа приема пищи по текущему времени.
     autoSelectMealType();
     initVoiceInput();
   }
 
   function initVoiceInput() {
+    // Голосовой ввод работает только там, где WebView поддерживает SpeechRecognition.
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     var btnVoice = document.getElementById('btn-voice-description');
 
@@ -168,6 +170,7 @@ var analyzeTab = (function() {
   }
 
   function handlePhotoSelected(file) {
+    // Перед отправкой уменьшаем фото, чтобы не перегружать сеть и API.
     compressImage(file, 1024, 0.7).then(function(blob) {
       currentPhotoBlob = blob;
       var url = URL.createObjectURL(blob);
@@ -190,6 +193,7 @@ var analyzeTab = (function() {
   }
 
   function resetToInput() {
+    // Полный сброс формы анализа к начальному состоянию.
     currentResult = null;
     currentPhotoBlob = null;
     inputSource = null;
@@ -207,6 +211,7 @@ var analyzeTab = (function() {
   }
 
   function doPhotoAnalysis(blob) {
+    // Запуск AI-анализа фото.
     inputSource = 'photo';
     showLoading();
 
@@ -228,6 +233,7 @@ var analyzeTab = (function() {
   }
 
   function doTextAnalysis(description) {
+    // Запуск AI-анализа текстового описания.
     inputSource = 'text';
     showLoading();
 
@@ -249,6 +255,7 @@ var analyzeTab = (function() {
   }
 
   function displayResult(data) {
+    // Результат отображается в прежнем дизайне, но все ключевые значения редактируемые.
     document.getElementById('result-dish-name-input').value = data.dish_name || '';
     document.getElementById('result-calories-input').value = data.calories || 0;
     document.getElementById('result-protein-input').value = data.protein || 0;
@@ -261,7 +268,7 @@ var analyzeTab = (function() {
                        data.confidence === 'medium' ? 'Средняя точность' : 'Низкая точность';
     conf.className = 'confidence-badge confidence-' + data.confidence;
 
-    // Items breakdown
+    // Детализация состава блюда, если модель вернула несколько компонентов.
     var itemsEl = document.getElementById('result-items');
     if (data.items && data.items.length > 1) {
       var html = '<details><summary>Состав блюда (' + data.items.length + ')</summary>';
@@ -316,6 +323,7 @@ var analyzeTab = (function() {
   }
 
   function readEditedResult() {
+    // Перед сохранением считываем ручные правки пользователя.
     var dishName = document.getElementById('result-dish-name-input').value.trim();
     var calories = parseNumberInput('result-calories-input');
     var protein = parseNumberInput('result-protein-input');
@@ -357,7 +365,7 @@ var analyzeTab = (function() {
   }
 
   function show() {
-    // Nothing special on tab show
+    // При показе вкладки дополнительных действий не требуется.
   }
 
   return { init: init, show: show };

@@ -2,17 +2,21 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
+// Создаем директорию с SQLite-базой при первом запуске.
 const DATA_DIR = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+// DB_PATH позволяет переопределить путь в Docker/production окружении.
 const dbPath = process.env.DB_PATH || path.join(DATA_DIR, 'app.sqlite');
 const db = new Database(dbPath);
 
+// WAL улучшает параллельное чтение/запись, foreign_keys включает ограничения SQLite.
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+// Идемпотентная схема: новые таблицы добавляются при старте без удаления данных.
 db.exec(`
   CREATE TABLE IF NOT EXISTS meals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

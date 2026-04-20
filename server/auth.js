@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const db = require('./db');
 
+// Сохраняем/обновляем профиль пользователя при каждом API-запросе.
 const upsertUser = db.prepare(`
   INSERT INTO users (telegram_id, first_name, last_name, username, language_code, is_premium, first_seen_at, last_seen_at)
   VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
@@ -26,6 +27,7 @@ function rememberUser(user) {
   );
 }
 
+// Проверка подписи Telegram initData по алгоритму WebAppData.
 function validateInitData(initData, botToken) {
   if (!initData) return null;
 
@@ -71,6 +73,7 @@ function validateInitData(initData, botToken) {
 }
 
 function authMiddleware(req, res, next) {
+  // В development можно открыть UI без Telegram, используя фиксированного dev-пользователя.
   if (process.env.NODE_ENV === 'development') {
     const initData = req.headers['x-telegram-init-data'];
     if (!initData) {
@@ -83,6 +86,7 @@ function authMiddleware(req, res, next) {
   const initData = req.headers['x-telegram-init-data'];
   const botToken = process.env.BOT_TOKEN;
 
+  // В production BOT_TOKEN обязателен, иначе подпись initData проверить нельзя.
   if (!botToken) {
     return res.status(500).json({ success: false, error: 'Server misconfigured' });
   }
@@ -92,6 +96,7 @@ function authMiddleware(req, res, next) {
     return res.status(401).json({ success: false, error: 'Unauthorized' });
   }
 
+  // После успешной проверки кладем пользователя в request для всех роутов.
   req.telegramUser = user;
   rememberUser(user);
   next();
