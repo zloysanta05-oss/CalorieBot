@@ -385,6 +385,58 @@ body {
 .macro-fat { background: rgba(232,168,56,0.15); color: var(--fat-color); }
 .macro-carbs { background: rgba(92,184,92,0.15); color: var(--carbs-color); }
 
+.result-edit-text,
+.result-edit-number,
+.macro-input,
+.portion-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  text-align: center;
+  border-radius: 6px;
+}
+
+.result-edit-text:focus,
+.result-edit-number:focus,
+.macro-input:focus,
+.portion-input:focus {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1.5px var(--link);
+}
+
+.result-edit-text {
+  display: block;
+  width: 100%;
+}
+
+.result-edit-number {
+  width: 100%;
+}
+
+.macro-input {
+  width: 58px;
+}
+
+.portion-input {
+  width: 64px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.result-edit-number::-webkit-outer-spin-button,
+.result-edit-number::-webkit-inner-spin-button,
+.macro-input::-webkit-outer-spin-button,
+.macro-input::-webkit-inner-spin-button,
+.portion-input::-webkit-outer-spin-button,
+.portion-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .portion-info {
   font-size: 13px;
   color: var(--hint);

@@ -249,13 +249,12 @@ var analyzeTab = (function() {
   }
 
   function displayResult(data) {
-    document.getElementById('result-dish-name').textContent = data.dish_name;
-    document.getElementById('result-calories').textContent = data.calories;
-    document.getElementById('result-protein').textContent = data.protein + ' г';
-    document.getElementById('result-fat').textContent = data.fat + ' г';
-    document.getElementById('result-carbs').textContent = data.carbs + ' г';
-    document.getElementById('result-portion').textContent =
-      data.portion_grams ? 'Порция ~' + data.portion_grams + ' г' : '';
+    document.getElementById('result-dish-name-input').value = data.dish_name || '';
+    document.getElementById('result-calories-input').value = data.calories || 0;
+    document.getElementById('result-protein-input').value = data.protein || 0;
+    document.getElementById('result-fat-input').value = data.fat || 0;
+    document.getElementById('result-carbs-input').value = data.carbs || 0;
+    document.getElementById('result-portion-input').value = data.portion_grams || '';
 
     var conf = document.getElementById('result-confidence');
     conf.textContent = data.confidence === 'high' ? 'Высокая точность' :
@@ -284,6 +283,13 @@ var analyzeTab = (function() {
 
     var btn = document.getElementById('btn-save-meal');
     btn.disabled = true;
+    var edited = readEditedResult();
+    if (!edited) {
+      btn.disabled = false;
+      return;
+    }
+
+    currentResult = Object.assign({}, currentResult, edited);
 
     var mealData = {
       date: todayStr(),
@@ -307,6 +313,47 @@ var analyzeTab = (function() {
     }).finally(function() {
       btn.disabled = false;
     });
+  }
+
+  function readEditedResult() {
+    var dishName = document.getElementById('result-dish-name-input').value.trim();
+    var calories = parseNumberInput('result-calories-input');
+    var protein = parseNumberInput('result-protein-input');
+    var fat = parseNumberInput('result-fat-input');
+    var carbs = parseNumberInput('result-carbs-input');
+    var portion = parseNumberInput('result-portion-input', true);
+
+    if (!dishName) {
+      showToast('Укажите название блюда', 'error');
+      return null;
+    }
+
+    if (calories === null || protein === null || fat === null || carbs === null) {
+      showToast('Проверьте калории и БЖУ', 'error');
+      return null;
+    }
+
+    return {
+      dish_name: dishName,
+      calories: Math.round(calories),
+      protein: roundMacro(protein),
+      fat: roundMacro(fat),
+      carbs: roundMacro(carbs),
+      portion_grams: portion === null ? null : Math.round(portion)
+    };
+  }
+
+  function parseNumberInput(id, allowEmpty) {
+    var raw = document.getElementById(id).value;
+    if (allowEmpty && raw.trim() === '') return null;
+
+    var value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) return null;
+    return value;
+  }
+
+  function roundMacro(value) {
+    return Math.round(value * 10) / 10;
   }
 
   function show() {

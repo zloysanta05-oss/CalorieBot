@@ -77,25 +77,30 @@
     <!-- Result -->
     <div id="analyze-result" class="hidden">
       <div class="result-card">
-        <div class="dish-name" id="result-dish-name"></div>
+        <input type="text" class="result-edit-text dish-name" id="result-dish-name-input" maxlength="120" aria-label="Название блюда">
         <div id="result-confidence" class="confidence-badge"></div>
-        <div class="calories-big" id="result-calories"></div>
+        <input type="number" class="result-edit-number calories-big" id="result-calories-input" min="0" max="10000" step="1" aria-label="Калории">
         <div class="calories-label">ккал</div>
         <div class="macros-row">
           <div class="macro-badge macro-protein">
-            <span class="macro-value" id="result-protein"></span>
+            <input type="number" class="macro-value macro-input" id="result-protein-input" min="0" max="1000" step="0.1" aria-label="Белки">
             <span class="macro-label">Белки</span>
           </div>
           <div class="macro-badge macro-fat">
-            <span class="macro-value" id="result-fat"></span>
+            <input type="number" class="macro-value macro-input" id="result-fat-input" min="0" max="1000" step="0.1" aria-label="Жиры">
             <span class="macro-label">Жиры</span>
           </div>
           <div class="macro-badge macro-carbs">
-            <span class="macro-value" id="result-carbs"></span>
+            <input type="number" class="macro-value macro-input" id="result-carbs-input" min="0" max="1000" step="0.1" aria-label="Углеводы">
             <span class="macro-label">Углеводы</span>
           </div>
         </div>
-        <div class="portion-info" id="result-portion"></div>
+        <div class="portion-info">
+          Порция ~
+          <input type="number" class="portion-input" id="result-portion-input" min="0" max="10000" step="1" aria-label="Порция в граммах">
+          г
+        </div>
+
         <div id="result-items" class="items-breakdown hidden"></div>
 
         <div class="meal-type-row" id="meal-type-selector">
