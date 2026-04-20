@@ -1,15 +1,15 @@
-# Deploy to VPS
+# Деплой на VPS
 
-This guide deploys CalorieBot to a VPS with Docker Compose and HTTPS via Caddy.
+Эта инструкция поможет развернуть CalorieBot на VPS через Docker Compose и HTTPS через Caddy.
 
-## Requirements
+## Требования
 
-- Ubuntu/Debian VPS with SSH access
-- Domain or subdomain pointed to the VPS IP address
-- Telegram bot token from [@BotFather](https://t.me/BotFather)
-- OpenAI-compatible API key
+- VPS на Ubuntu/Debian с SSH-доступом
+- Домен или поддомен, направленный на IP-адрес VPS
+- Токен Telegram-бота от [@BotFather](https://t.me/BotFather)
+- API-ключ OpenAI-совместимого сервиса
 
-## 1. Install Docker
+## 1. Установите Docker
 
 ```bash
 sudo apt update
@@ -18,32 +18,32 @@ curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
 ```
 
-Log out and log back in after `usermod`.
+После `usermod` выйдите из SSH и зайдите снова.
 
-Check Docker:
+Проверьте Docker:
 
 ```bash
 docker --version
 docker compose version
 ```
 
-## 2. Clone the Project
+## 2. Скопируйте проект
 
 ```bash
 git clone https://github.com/zloysanta05-oss/CalorieBot.git
 cd CalorieBot
 ```
 
-If you deploy from another repository or upload files manually, run the following commands from the project root.
+Если вы деплоите из другого репозитория или загружаете файлы вручную, выполняйте следующие команды из корня проекта.
 
-## 3. Configure Environment
+## 3. Настройте переменные окружения
 
 ```bash
 cp .env.production .env
 nano .env
 ```
 
-Fill in the required values:
+Заполните обязательные значения:
 
 ```env
 BOT_TOKEN=your_bot_token_here
@@ -54,104 +54,114 @@ PORT=3000
 NODE_ENV=production
 ```
 
-`OPENAI_MODEL` is optional in code, but keeping it explicit makes production easier to inspect.
+`OPENAI_MODEL` в коде необязателен, но в продакшене удобнее держать модель явно в `.env`.
 
-## 4. Configure Domain
+## 4. Настройте домен
 
-Create an `A` DNS record:
+Создайте DNS-запись типа `A`:
 
 ```text
 cal.example.com -> YOUR_VPS_IP
 ```
 
-Then edit `Caddyfile` and replace `cal.example.com` with your real domain.
+Затем откройте `Caddyfile` и замените `cal.example.com` на ваш реальный домен.
 
-## 5. Check Caddy
+## 5. Проверьте Caddy
 
-The included `docker-compose.yml` starts Caddy together with the app. The included `Caddyfile` assumes Caddy runs in the same Docker Compose network and proxies requests to `app:3000`.
+`docker-compose.yml` уже запускает Caddy вместе с приложением. `Caddyfile` рассчитан на запуск Caddy в той же Docker Compose сети и проксирует запросы на `app:3000`.
 
-If you prefer to run Caddy outside Compose, change `reverse_proxy app:3000` in `Caddyfile` to `reverse_proxy localhost:3000`.
+Если вы хотите запускать Caddy отдельно от Compose, замените в `Caddyfile`:
 
-## 6. Start
+```caddyfile
+reverse_proxy app:3000
+```
+
+на:
+
+```caddyfile
+reverse_proxy localhost:3000
+```
+
+## 6. Запустите проект
 
 ```bash
 docker compose up -d --build
 docker compose logs -f app
 ```
 
-Check locally on the VPS:
+Проверьте приложение локально на VPS:
 
 ```bash
 curl http://localhost:3000
 ```
 
-Check HTTPS:
+Проверьте HTTPS:
 
 ```bash
 curl https://cal.example.com
 ```
 
-Use your real domain instead of `cal.example.com`.
+Вместо `cal.example.com` используйте ваш реальный домен.
 
-## 7. Connect Telegram Mini App
+## 7. Подключите Telegram Mini App
 
-In [@BotFather](https://t.me/BotFather):
+Откройте [@BotFather](https://t.me/BotFather):
 
 ```text
 /newapp
 ```
 
-Select the bot and set the Mini App URL:
+Выберите бота и укажите URL Mini App:
 
 ```text
 https://cal.example.com
 ```
 
-Telegram requires HTTPS, so wait until Caddy has issued the certificate successfully.
+Telegram требует HTTPS, поэтому дождитесь, пока Caddy успешно выпустит сертификат.
 
-## Useful Commands
+## Полезные команды
 
-View logs:
+Посмотреть логи:
 
 ```bash
 docker compose logs -f app
 docker compose logs -f caddy
 ```
 
-Restart:
+Перезапустить:
 
 ```bash
 docker compose restart
 ```
 
-Update after git pull:
+Обновить после `git pull`:
 
 ```bash
 git pull
 docker compose up -d --build
 ```
 
-Stop without deleting data:
+Остановить без удаления данных:
 
 ```bash
 docker compose down
 ```
 
-Stop and delete all Docker volumes, including SQLite data:
+Остановить и удалить все Docker volume, включая SQLite-базу:
 
 ```bash
 docker compose down -v
 ```
 
-## SQLite Data
+## Данные SQLite
 
-The app stores SQLite data in the `caloriebot-data` Docker volume at:
+Приложение хранит SQLite-базу в Docker volume `caloriebot-data` по пути:
 
 ```text
 /app/data/app.sqlite
 ```
 
-Create a simple backup:
+Создать простой бэкап:
 
 ```bash
 docker run --rm \
@@ -160,7 +170,7 @@ docker run --rm \
   alpine cp /data/app.sqlite /backup/app.sqlite.backup
 ```
 
-Restore a backup:
+Восстановить бэкап:
 
 ```bash
 docker compose down
@@ -171,22 +181,22 @@ docker run --rm \
 docker compose up -d
 ```
 
-## Troubleshooting
+## Решение проблем
 
-If HTTPS does not work:
+Если HTTPS не работает:
 
-- Check that DNS points to the VPS IP.
-- Check that ports `80` and `443` are open in the VPS firewall.
-- Run `docker compose logs -f caddy`.
+- Проверьте, что DNS указывает на IP-адрес VPS.
+- Проверьте, что порты `80` и `443` открыты в firewall VPS.
+- Запустите `docker compose logs -f caddy`.
 
-If the app returns `Unauthorized`:
+Если приложение отвечает `Unauthorized`:
 
-- Make sure `NODE_ENV=production`.
-- Open it through Telegram Mini App, not directly in a browser.
-- Check that `BOT_TOKEN` matches the bot used in BotFather.
+- Убедитесь, что установлено `NODE_ENV=production`.
+- Открывайте приложение через Telegram Mini App, а не напрямую в браузере.
+- Проверьте, что `BOT_TOKEN` относится к тому же боту, который выбран в BotFather.
 
-If AI analysis fails:
+Если не работает AI-анализ:
 
-- Check `OPENAI_API_KEY`.
-- Check `OPENAI_BASE_URL`.
-- Check whether your selected `OPENAI_MODEL` supports image input.
+- Проверьте `OPENAI_API_KEY`.
+- Проверьте `OPENAI_BASE_URL`.
+- Проверьте, что выбранная `OPENAI_MODEL` поддерживает анализ изображений.
