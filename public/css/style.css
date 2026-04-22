@@ -1,7 +1,7 @@
 :root {
   --bg: #f5f6fa;
-  --text: var(--tg-theme-text-color, #22242a);
-  --hint: var(--tg-theme-hint-color, #7b808a);
+  --text: #22242a;
+  --hint: #7b808a;
   --link: #ff7417;
   --btn-bg: #ff7417;
   --btn-text: var(--tg-theme-button-text-color, #ffffff);
@@ -40,6 +40,18 @@ body {
   font-size: 15px;
   line-height: 1.4;
   padding-bottom: 78px;
+  overflow-wrap: anywhere;
+}
+
+p,
+h1,
+h2,
+h3,
+span,
+small,
+strong,
+div {
+  min-width: 0;
 }
 
 /* Нижняя панель вкладок */
@@ -1155,6 +1167,11 @@ body {
   gap: 12px;
 }
 
+.access-status > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
 .profile-avatar {
   width: 46px;
   height: 46px;
@@ -1202,6 +1219,41 @@ body {
   align-items: end;
   gap: 10px;
   margin-top: 12px;
+}
+
+@media (max-width: 340px) {
+  .tab-content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .access-status,
+  .section-header-row,
+  .total-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .access-badge {
+    margin-left: 58px;
+  }
+
+  .goal-value-row span {
+    font-size: 26px;
+  }
+
+  .meal-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .meal-item .meal-info {
+    flex-basis: calc(100% - 118px);
+  }
+
+  .meal-actions {
+    margin-left: auto;
+  }
 }
 
 .calc-save-row .btn {
