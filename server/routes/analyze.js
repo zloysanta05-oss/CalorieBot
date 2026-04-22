@@ -28,7 +28,11 @@ router.post('/analyze-photo', upload.single('photo'), async (req, res) => {
       return res.status(400).json({ success: false, error: 'No image provided' });
     }
 
-    const result = await analyzeImage(base64Data, mimeType);
+    const note = req.body && typeof req.body.note === 'string'
+      ? req.body.note.trim().slice(0, 300)
+      : '';
+
+    const result = await analyzeImage(base64Data, mimeType, note);
 
     if (result.error) {
       return res.json({ success: false, error: result.error, message: result.message });

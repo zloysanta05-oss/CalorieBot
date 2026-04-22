@@ -50,6 +50,8 @@ BOT_TOKEN=your_bot_token_here
 OPENAI_API_KEY=your_api_key_here
 OPENAI_BASE_URL=https://routerai.ru/api/v1
 OPENAI_MODEL=openai/gpt-5.4-nano
+OPENAI_TIMEOUT_MS=120000
+OPENAI_RECIPE_TIMEOUT_MS=240000
 PORT=3000
 NODE_ENV=production
 OWNER_TELEGRAM_ID=your_telegram_id
@@ -57,6 +59,7 @@ ADMIN_TELEGRAM_IDS=friend_admin_id,another_admin_id
 ```
 
 `OPENAI_MODEL` в коде необязателен, но в продакшене удобнее держать модель явно в `.env`.
+`OPENAI_TIMEOUT_MS` и `OPENAI_RECIPE_TIMEOUT_MS` можно оставить как в примере; второй нужен для более долгих AI-вызовов генерации рецептов, даже если модуль рецептов скрыт в текущем UI.
 
 `OWNER_TELEGRAM_ID` получает бесплатный Premium-доступ навсегда. `ADMIN_TELEGRAM_IDS` могут выдавать и отзывать бесплатный доступ друзьям из админского блока в приложении.
 
@@ -149,7 +152,7 @@ curl "https://api.telegram.org/bot<ТОКЕН>/getWebhookInfo"
 
 В ответе `url` должен быть `https://cal.example.com/telegram/webhook`, а `last_error_message` должен отсутствовать.
 
-Цена Premium и дневной бесплатный лимит задаются владельцем/админом внутри приложения: вкладка «Статистика» → блок «Админ».
+Цена Premium и дневной бесплатный лимит задаются владельцем/админом внутри приложения на отдельной вкладке «Админ».
 
 Список пользователей тоже находится в блоке «Админ». Пользователь появится там после первого открытия Mini App или первого API-запроса.
 

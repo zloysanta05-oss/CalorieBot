@@ -6,6 +6,11 @@ const { getAccessStatus } = require('./access');
 const SUBSCRIPTION_SECONDS = 2592000; // Подписка Telegram Stars длится 30 дней.
 
 const getSettingsStmt = db.prepare('SELECT * FROM monetization_settings WHERE id = 1');
+const getUserStmt = db.prepare(`
+  SELECT telegram_id, first_name, last_name, username, language_code
+  FROM users
+  WHERE telegram_id = ?
+`);
 const updateSettingsStmt = db.prepare(`
   UPDATE monetization_settings
   SET premium_stars = ?, free_daily_limit = ?, updated_by = ?, updated_at = datetime('now')
@@ -95,8 +100,10 @@ function getPlanForUser(userId) {
   const access = getAccessStatus(userId);
   const settings = getSettings();
   const usage = getUsage(userId);
+  const user = getUserStmt.get(Number(userId)) || { telegram_id: Number(userId) };
 
   return {
+    user,
     access,
     settings,
     usage,

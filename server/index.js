@@ -27,6 +27,11 @@ app.use('/api', require('./routes/goals'));
 app.use('/api', require('./routes/stats'));
 app.use('/api', require('./routes/access'));
 app.use('/api', payments.router);
+app.use('/api', require('./routes/favorites'));
+app.use('/api', require('./routes/pantry'));
+app.use('/api', require('./routes/inventory'));
+app.use('/api', require('./routes/recipes'));
+app.use('/api', require('./routes/shopping'));
 
 // Резервный ответ для SPA: любые неизвестные пути возвращают основной index.html.
 app.get('/{*path}', (req, res) => {

@@ -9,72 +9,152 @@
 </head>
 <body>
 
-  <!-- Tab: Analyze -->
-  <div id="tab-analyze" class="tab-content active">
-    <!-- Input mode -->
-    <div id="analyze-input">
-      <div class="action-area">
-        <button class="action-btn" id="btn-photo">
+  <!-- Tab: Today -->
+  <div id="tab-today" class="tab-content active">
+    <div id="today-dashboard">
+      <div class="stats-hero today-hero">
+        <div class="progress-ring-container" id="today-ring">
+          <svg width="160" height="160">
+            <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="10"/>
+            <circle id="today-ring-progress" cx="80" cy="80" r="70" fill="none" stroke="var(--link)" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="439.82" stroke-dashoffset="439.82"/>
+          </svg>
+          <div class="ring-text">
+            <span class="ring-value" id="today-cals">0</span>
+            <span class="ring-label" id="today-label">из 2000 ккал</span>
+          </div>
+        </div>
+        <div class="today-hint" id="today-hint">Загрузка...</div>
+      </div>
+
+      <div class="macro-stats-grid">
+        <div class="macro-stat-card" style="border-top:3px solid var(--protein-color)">
+          <div class="stat-value" id="today-protein">0 г</div>
+          <div class="stat-label">Белки</div>
+        </div>
+        <div class="macro-stat-card" style="border-top:3px solid var(--fat-color)">
+          <div class="stat-value" id="today-fat">0 г</div>
+          <div class="stat-label">Жиры</div>
+        </div>
+        <div class="macro-stat-card" style="border-top:3px solid var(--carbs-color)">
+          <div class="stat-value" id="today-carbs">0 г</div>
+          <div class="stat-label">Углеводы</div>
+        </div>
+      </div>
+
+      <div class="action-area compact-actions">
+        <button class="action-btn" id="btn-photo" type="button">
           <div class="action-icon photo-icon">&#128247;</div>
           <div class="action-text">
-            <h3>&#128248; Сфотографировать</h3>
-            <p>Сделайте фото блюда или выберите из галереи</p>
+            <h3>Фото еды</h3>
+            <p>Сфотографируйте блюдо и проверьте КБЖУ</p>
           </div>
         </button>
-        <button class="action-btn" id="btn-text-mode">
+        <button class="action-btn" id="btn-text-mode" type="button">
           <div class="action-icon text-icon">&#9998;</div>
           <div class="action-text">
-            <h3>&#9997; Описать блюдо</h3>
-            <p>Напишите что вы съели, например «борщ с хлебом»</p>
+            <h3>Описать блюдо</h3>
+            <p>Напишите, что вы съели</p>
+          </div>
+        </button>
+        <button class="action-btn hidden" id="btn-pantry-photo" type="button">
+          <div class="action-icon pantry-icon">&#129367;</div>
+          <div class="action-text">
+            <h3>Фото продуктов</h3>
+            <p>Быстрый переход к подбору рецептов</p>
+          </div>
+        </button>
+        <button class="action-btn" id="btn-manual-mode" type="button">
+          <div class="action-icon manual-icon">&#43;</div>
+          <div class="action-text">
+            <h3>Добавить вручную</h3>
+            <p>Без AI: название, калории и БЖУ</p>
           </div>
         </button>
       </div>
+    </div>
 
-      <div id="text-input-area" class="text-input-panel hidden">
-        <textarea class="textarea" id="food-description" placeholder="Опишите блюдо, например: «гречка с курицей и салат из помидоров»" maxlength="500"></textarea>
-        <div class="voice-row">
-          <button class="voice-btn hidden" id="btn-voice-description" type="button" aria-label="Голосовой ввод" title="Голосовой ввод">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/>
-              <path d="M5 11a7 7 0 0 0 14 0"/>
-              <path d="M12 18v3"/>
-              <path d="M8 21h8"/>
-            </svg>
-          </button>
-          <div class="voice-meter hidden" id="voice-meter" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <span class="voice-status hidden" id="voice-status">Слушаю...</span>
+    <div id="text-input-area" class="text-input-panel hidden">
+      <textarea class="textarea" id="food-description" placeholder="Опишите блюдо, например: «гречка с курицей и салат из помидоров»" maxlength="500"></textarea>
+      <div class="voice-row">
+        <button class="voice-btn hidden" id="btn-voice-description" type="button" aria-label="Голосовой ввод" title="Голосовой ввод">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/>
+            <path d="M5 11a7 7 0 0 0 14 0"/>
+            <path d="M12 18v3"/>
+            <path d="M8 21h8"/>
+          </svg>
+        </button>
+        <div class="voice-meter hidden" id="voice-meter" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span><span></span>
         </div>
-        <div class="analyze-text-actions">
-          <button class="btn btn-primary" id="btn-analyze-text">Анализировать</button>
-        </div>
+        <span class="voice-status hidden" id="voice-status">Слушаю...</span>
       </div>
+      <div class="analyze-actions">
+        <button class="btn btn-secondary" id="btn-cancel-text" type="button">Назад</button>
+        <button class="btn btn-primary" id="btn-analyze-text" type="button">Анализировать</button>
+      </div>
+    </div>
 
-      <div id="photo-preview-area" class="hidden">
-        <div class="photo-preview">
-          <img id="photo-preview-img" src="" alt="Preview">
-          <button class="remove-btn" id="btn-remove-photo">&times;</button>
-        </div>
-        <textarea class="textarea" id="photo-note" placeholder="Уточнение (необязательно), например: «это 2 порции» или «без соуса»" maxlength="300" style="margin-bottom:8px"></textarea>
-        <button class="btn btn-primary" id="btn-analyze-photo">Анализировать фото</button>
+    <div id="photo-preview-area" class="photo-input-panel hidden">
+      <div class="photo-preview">
+        <img id="photo-preview-img" src="" alt="Preview">
+        <button class="remove-btn" id="btn-remove-photo" type="button">&times;</button>
+      </div>
+      <textarea class="textarea" id="photo-note" placeholder="Уточнение (необязательно), например: «это 2 порции» или «без соуса»" maxlength="300" style="margin-bottom:8px"></textarea>
+      <div class="analyze-actions">
+        <button class="btn btn-secondary" id="btn-cancel-photo" type="button">Назад</button>
+        <button class="btn btn-primary" id="btn-analyze-photo" type="button">Анализировать</button>
+      </div>
+    </div>
+
+    <div id="manual-meal-area" class="tool-card manual-card hidden">
+      <h3>Добавить вручную</h3>
+      <label class="manual-field manual-field-full" for="manual-name">
+        <span>Название блюда</span>
+        <input type="text" class="input manual-name-input" id="manual-name" placeholder="Например: плов с говядиной">
+      </label>
+      <div class="manual-grid">
+        <label class="manual-field" for="manual-calories">
+          <span>Калории</span>
+          <input type="number" class="input" id="manual-calories" placeholder="ккал" min="0">
+        </label>
+        <label class="manual-field" for="manual-protein">
+          <span>Белки</span>
+          <input type="number" class="input" id="manual-protein" placeholder="г" min="0" step="0.1">
+        </label>
+        <label class="manual-field" for="manual-fat">
+          <span>Жиры</span>
+          <input type="number" class="input" id="manual-fat" placeholder="г" min="0" step="0.1">
+        </label>
+        <label class="manual-field" for="manual-carbs">
+          <span>Углеводы</span>
+          <input type="number" class="input" id="manual-carbs" placeholder="г" min="0" step="0.1">
+        </label>
+      </div>
+      <label class="manual-field manual-field-full" for="manual-portion">
+        <span>Порция</span>
+        <input type="number" class="input" id="manual-portion" placeholder="г" min="0">
+      </label>
+      <div class="meal-type-row" id="manual-meal-type-selector">
+        <button class="meal-type-btn" data-type="breakfast" type="button">&#127749; Завтрак</button>
+        <button class="meal-type-btn active" data-type="lunch" type="button">&#9728;&#65039; Обед</button>
+        <button class="meal-type-btn" data-type="dinner" type="button">&#127769; Ужин</button>
+        <button class="meal-type-btn" data-type="snack" type="button">&#127871; Перекус</button>
+      </div>
+      <div class="manual-actions">
+        <button class="btn btn-secondary" id="btn-cancel-manual" type="button">Назад</button>
+        <button class="btn btn-primary" id="btn-save-manual" type="button">Сохранить</button>
       </div>
     </div>
 
     <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden">
 
-    <!-- Loading -->
     <div id="analyze-loading" class="loading-state hidden">
       <div class="spinner"></div>
-      <p>Анализируем ваше блюдо...</p>
+      <p id="analyze-loading-text">Анализируем...</p>
     </div>
 
-    <!-- Result -->
     <div id="analyze-result" class="hidden">
       <div class="result-card">
         <input type="text" class="result-edit-text dish-name" id="result-dish-name-input" maxlength="120" aria-label="Название блюда">
@@ -100,19 +180,18 @@
           <input type="number" class="portion-input" id="result-portion-input" min="0" max="10000" step="1" aria-label="Порция в граммах">
           г
         </div>
-
         <div id="result-items" class="items-breakdown hidden"></div>
-
+        <div class="result-edit-hint">Можно поправить название, калории, порцию и БЖУ перед сохранением</div>
         <div class="meal-type-row" id="meal-type-selector">
-          <button class="meal-type-btn" data-type="breakfast">&#127749; Завтрак</button>
-          <button class="meal-type-btn active" data-type="lunch">&#9728; Обед</button>
-          <button class="meal-type-btn" data-type="dinner">&#127769; Ужин</button>
-          <button class="meal-type-btn" data-type="snack">&#127871; Перекус</button>
+          <button class="meal-type-btn" data-type="breakfast" type="button">&#127749; Завтрак</button>
+          <button class="meal-type-btn active" data-type="lunch" type="button">&#9728;&#65039; Обед</button>
+          <button class="meal-type-btn" data-type="dinner" type="button">&#127769; Ужин</button>
+          <button class="meal-type-btn" data-type="snack" type="button">&#127871; Перекус</button>
         </div>
-
         <div class="result-actions">
-          <button class="btn btn-secondary" id="btn-retry">Заново</button>
-          <button class="btn btn-primary" id="btn-save-meal">Сохранить</button>
+          <button class="btn btn-secondary" id="btn-retry" type="button">Заново</button>
+          <button class="btn btn-outline" id="btn-favorite-result" type="button" aria-pressed="false">☆ В избранное</button>
+          <button class="btn btn-primary" id="btn-save-meal" type="button">Сохранить</button>
         </div>
       </div>
     </div>
@@ -121,14 +200,13 @@
   <!-- Tab: Diary -->
   <div id="tab-diary" class="tab-content">
     <div class="date-nav">
-      <button id="date-prev">&#8249;</button>
+      <button id="date-prev" type="button">&#8249;</button>
       <div style="text-align:center">
         <div class="date-text" id="diary-date-text"></div>
         <div class="date-today hidden" id="diary-today-link">Сегодня</div>
       </div>
-      <button id="date-next">&#8250;</button>
+      <button id="date-next" type="button">&#8250;</button>
     </div>
-
     <div id="diary-totals" class="daily-totals hidden">
       <div class="total-row">
         <span class="total-cals" id="diary-total-cals"></span>
@@ -137,82 +215,280 @@
       <div class="progress-bar">
         <div class="progress-fill" id="diary-progress"></div>
       </div>
+      <div class="diary-macro-progress" id="diary-macro-progress"></div>
+    </div>
+
+    <div class="diary-add-row">
+      <button class="diary-add-card" id="btn-diary-favorites" type="button">
+        <span class="diary-add-icon">★</span>
+        <span class="diary-add-text">
+          <strong>Добавить из блюд</strong>
+          <small>Выберите любимое блюдо и быстро внесите его в дневник</small>
+        </span>
+      </button>
+    </div>
+
+    <div class="favorites-section hidden" id="diary-favorites-panel">
+      <div class="section-header-row">
+        <h3>Добавить из блюд</h3>
+        <button class="btn btn-secondary btn-small" id="btn-close-diary-favorites" type="button">Назад</button>
+      </div>
+      <div id="diary-favorites-list"></div>
+      <div id="diary-favorites-empty" class="empty-inline hidden">Пока нет любимых блюд</div>
     </div>
 
     <div id="diary-list"></div>
     <div id="diary-empty" class="empty-state hidden">
       <div class="empty-icon">&#127869;</div>
       <p>Нет записей за этот день</p>
-      <p style="margin-top:4px;font-size:12px">Перейдите на вкладку анализа, чтобы добавить приём пищи</p>
+      <p style="margin-top:4px;font-size:12px">Добавьте еду на вкладке «Сегодня»</p>
     </div>
   </div>
 
-  <!-- Tab: Stats -->
-  <div id="tab-stats" class="tab-content">
-    <div class="stats-hero">
-      <div class="progress-ring-container" id="stats-ring">
-        <svg width="160" height="160">
-          <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="10"/>
-          <circle id="ring-progress" cx="80" cy="80" r="70" fill="none" stroke="var(--link)" stroke-width="10" stroke-linecap="round"
-            stroke-dasharray="439.82" stroke-dashoffset="439.82"/>
-        </svg>
-        <div class="ring-text">
-          <span class="ring-value" id="stats-today-cals">0</span>
-          <span class="ring-label" id="stats-today-label">из 2000 ккал</span>
+  <!-- Tab: Recipes -->
+  <div id="tab-recipes" class="tab-content hidden">
+    <div id="recipes-start" class="tool-card">
+      <h3>Рецепты из продуктов</h3>
+      <p class="section-note">Ведите остатки продуктов и подбирайте блюда из того, что есть дома.</p>
+      <div class="recipe-action-grid">
+        <button class="recipe-photo-card" id="btn-open-inventory" type="button">
+          <span class="recipe-photo-icon">★</span>
+          <span>
+            <strong>Мои продукты</strong>
+            <small>Остатки и списание</small>
+          </span>
+        </button>
+        <button class="recipe-photo-card" id="btn-recipes-photo" type="button">
+          <span class="recipe-photo-icon">&#129367;</span>
+          <span>
+            <strong>Фото продуктов</strong>
+            <small>Распознать по снимку</small>
+          </span>
+        </button>
+      </div>
+      <div class="recipe-generate-row">
+        <label class="pantry-field pantry-goal-field" for="recipe-goal">
+          <span>Цель рецептов</span>
+          <select class="input" id="recipe-goal">
+            <option value="поддержание">Поддержание</option>
+            <option value="похудение">Похудение</option>
+            <option value="набор массы">Набор массы</option>
+            <option value="высокий белок">Высокий белок</option>
+          </select>
+        </label>
+        <button class="btn btn-primary" id="btn-generate-recipes" type="button">Подобрать рецепты</button>
+      </div>
+    </div>
+
+    <div id="inventory-panel" class="tool-card hidden">
+      <div class="section-header-row">
+        <h3>Мои продукты</h3>
+        <button class="btn btn-secondary btn-small" id="btn-close-inventory" type="button">Назад</button>
+      </div>
+      <p class="section-note">Текущие остатки для подбора рецептов и списания после готовки.</p>
+      <div id="inventory-list"></div>
+      <div id="inventory-empty" class="empty-inline hidden">Пока нет продуктов. Добавьте вручную или распознайте по фото.</div>
+      <div class="pantry-add-form inventory-add-form">
+        <label class="pantry-field" for="inventory-item-name">
+          <span>Продукт</span>
+          <input class="input" id="inventory-item-name" placeholder="Например: курица">
+        </label>
+        <label class="pantry-field" for="inventory-item-qty">
+          <span>Количество</span>
+          <input class="input" id="inventory-item-qty" placeholder="Например: 300 г">
+        </label>
+        <button class="btn btn-secondary btn-small" id="btn-add-inventory-item" type="button">Добавить</button>
+      </div>
+    </div>
+
+    <div id="recipes-loading" class="loading-state hidden">
+      <div class="spinner"></div>
+      <p id="recipes-loading-text">Распознаем продукты...</p>
+    </div>
+
+    <div id="pantry-result" class="hidden">
+      <div class="tool-card">
+        <h3>Подтвердите продукты</h3>
+        <div id="pantry-items-list" class="editable-list"></div>
+        <div class="pantry-add-form">
+          <label class="pantry-field" for="pantry-item-name">
+            <span>Продукт</span>
+            <input class="input" id="pantry-item-name" placeholder="Например: курица">
+          </label>
+          <label class="pantry-field" for="pantry-item-qty">
+            <span>Количество</span>
+            <div class="pantry-quantity-row">
+              <input class="input" id="pantry-item-qty" placeholder="Например: 300">
+              <select class="input" id="pantry-item-unit" aria-label="Единица измерения">
+                <option value="г">г</option>
+                <option value="мл">мл</option>
+                <option value="шт">шт</option>
+                <option value="упак">упак</option>
+              </select>
+            </div>
+          </label>
+          <button class="btn btn-secondary btn-small" id="btn-add-pantry-item" type="button">Добавить</button>
+        </div>
+        <div class="result-actions">
+          <button class="btn btn-secondary" id="btn-pantry-retry" type="button">Заново</button>
+          <button class="btn btn-primary" id="btn-confirm-pantry" type="button">Добавить в продукты</button>
         </div>
       </div>
-      <div style="font-size:13px;color:var(--hint)" id="stats-remaining-text"></div>
     </div>
 
-    <div class="macro-stats-grid">
-      <div class="macro-stat-card" style="border-top:3px solid var(--protein-color)">
-        <div class="stat-value" id="stats-protein">0 г</div>
-        <div class="stat-label">Белки</div>
-      </div>
-      <div class="macro-stat-card" style="border-top:3px solid var(--fat-color)">
-        <div class="stat-value" id="stats-fat">0 г</div>
-        <div class="stat-label">Жиры</div>
-      </div>
-      <div class="macro-stat-card" style="border-top:3px solid var(--carbs-color)">
-        <div class="stat-value" id="stats-carbs">0 г</div>
-        <div class="stat-label">Углеводы</div>
-      </div>
+    <div id="recipes-area" class="tool-card hidden">
+      <h3>Рецепты</h3>
+      <div id="recipes-list"></div>
     </div>
+  </div>
 
-    <div class="week-chart">
-      <h3>За неделю</h3>
-      <div class="chart-bars" id="week-chart-bars"></div>
-    </div>
-
-    <div class="goal-section">
-      <h3>Цель на день</h3>
-      <div class="goal-input-row">
-        <input type="number" class="input" id="goal-input" placeholder="2000" min="500" max="10000">
-        <button class="btn btn-primary btn-small" id="btn-save-goal">Сохранить</button>
-      </div>
-    </div>
-
-    <div class="access-section" id="access-section">
-      <div class="access-status">
+  <!-- Tab: Shopping -->
+  <div id="tab-shopping" class="tab-content hidden">
+    <div class="tool-card">
+      <div class="section-header-row shopping-header-row">
         <div>
-          <h3>Доступ</h3>
-          <p id="access-status-text">Загрузка...</p>
+          <h3>Покупки</h3>
+          <p class="section-note" id="shopping-note">Список появится после выбора рецепта или первого товара.</p>
         </div>
-        <span class="access-badge" id="access-badge">Free</span>
+        <button class="btn btn-secondary btn-small hidden" id="btn-clear-checked" type="button">Очистить</button>
       </div>
-      <div class="premium-actions hidden" id="premium-actions">
-        <button class="btn btn-primary" id="btn-buy-premium">Купить Premium</button>
+      <div class="shopping-add-form">
+        <label class="pantry-field" for="shopping-item-name">
+          <span>Товар</span>
+          <input class="input" id="shopping-item-name" placeholder="Например: молоко">
+        </label>
+        <label class="pantry-field" for="shopping-item-qty">
+          <span>Количество</span>
+          <div class="shopping-quantity-row">
+            <input class="input" id="shopping-item-qty" placeholder="Например: 1">
+            <select class="input" id="shopping-item-unit" aria-label="Единица измерения">
+              <option value="г">г</option>
+              <option value="мл">мл</option>
+              <option value="шт">шт</option>
+              <option value="упак">упак</option>
+            </select>
+          </div>
+        </label>
+        <label class="pantry-field" for="shopping-item-category">
+          <span>Категория</span>
+          <select class="input" id="shopping-item-category">
+            <option value="овощи/фрукты">Овощи/фрукты</option>
+            <option value="молочные">Молочные</option>
+            <option value="мясо/рыба/птица">Мясо/рыба/птица</option>
+            <option value="крупы/хлеб/макароны">Крупы/хлеб/макароны</option>
+            <option value="специи/соусы">Специи/соусы</option>
+            <option value="другое" selected>Другое</option>
+          </select>
+        </label>
+        <button class="btn btn-primary btn-small" id="btn-add-shopping-item" type="button">Добавить</button>
+      </div>
+      <div id="shopping-list"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Profile -->
+  <div id="tab-profile" class="tab-content">
+    <div id="profile-main">
+      <div class="access-section" id="access-section">
+        <div class="access-status">
+          <div class="profile-avatar" id="profile-avatar">?</div>
+          <div>
+            <h3 id="profile-user-name">Профиль</h3>
+            <p id="access-status-text">Загрузка...</p>
+          </div>
+          <span class="access-badge" id="access-badge">Free</span>
+        </div>
+        <div class="premium-actions hidden" id="premium-actions">
+          <button class="btn btn-primary" id="btn-buy-premium" type="button">Купить Premium</button>
+        </div>
+      </div>
+      <div class="goal-section">
+        <div class="section-header-row">
+          <div>
+            <h3>Цель на день</h3>
+            <p class="section-note">Текущая дневная цель по калориям.</p>
+          </div>
+          <button class="btn btn-primary btn-small" id="btn-toggle-calculator" type="button">Пересчитать</button>
+        </div>
+        <div class="goal-value-row">
+          <span id="goal-input">2000</span>
+          <small>ккал</small>
+        </div>
+      </div>
+      <div class="week-chart">
+        <h3>За неделю</h3>
+        <div class="chart-bars" id="week-chart-bars"></div>
+        <div class="week-summary" id="week-summary"></div>
       </div>
     </div>
+    <div class="goal-section hidden" id="profile-calculator-screen">
+      <div class="section-header-row">
+        <div>
+          <h3>Пересчет калорий</h3>
+        </div>
+        <button class="btn btn-secondary btn-small" id="btn-close-calculator" type="button">Назад</button>
+      </div>
+      <div class="calorie-calculator" id="calorie-calculator">
+        <p class="section-note">Калькулятор Миффлина-Сан Жеора помогает подобрать дневную норму калорий.</p>
+        <div class="calorie-calc-grid">
+          <label class="profile-field" for="calc-sex">
+            <span>Пол</span>
+            <select class="input" id="calc-sex">
+              <option value="male">Мужской</option>
+              <option value="female">Женский</option>
+            </select>
+          </label>
+          <label class="profile-field" for="calc-age">
+            <span>Возраст</span>
+            <input type="number" class="input" id="calc-age" placeholder="30" min="10" max="100">
+          </label>
+          <label class="profile-field" for="calc-height">
+            <span>Рост, см</span>
+            <input type="number" class="input" id="calc-height" placeholder="175" min="100" max="250">
+          </label>
+          <label class="profile-field" for="calc-weight">
+            <span>Вес, кг</span>
+            <input type="number" class="input" id="calc-weight" placeholder="75" min="30" max="300" step="0.1">
+          </label>
+          <label class="profile-field profile-field-full" for="calc-activity">
+            <span>Активность</span>
+            <select class="input" id="calc-activity">
+              <option value="1.2">Мало движения</option>
+              <option value="1.375">Легкая активность</option>
+              <option value="1.55">Тренировки 3-5 раз в неделю</option>
+              <option value="1.725">Высокая активность</option>
+            </select>
+          </label>
+          <label class="profile-field profile-field-full" for="calc-goal">
+            <span>Цель</span>
+            <select class="input" id="calc-goal">
+              <option value="lose">Похудение</option>
+              <option value="maintain" selected>Поддержание</option>
+              <option value="gain">Набор массы</option>
+            </select>
+          </label>
+        </div>
+        <div class="calc-save-row">
+          <label class="profile-field" for="calc-goal-input">
+            <span>Цель, ккал</span>
+            <input type="number" class="input" id="calc-goal-input" placeholder="Например: 1800" min="500" max="10000">
+          </label>
+          <button class="btn btn-primary btn-small" id="btn-save-calculated-goal" type="button">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <div class="admin-section hidden" id="admin-section">
+  <!-- Tab: Admin -->
+  <div id="tab-admin" class="tab-content hidden">
+    <div class="admin-section">
       <h3>Админ</h3>
       <div class="admin-form admin-pricing">
         <label class="field-label" for="admin-premium-stars">Цена Premium, Stars за 30 дней</label>
         <input type="number" class="input" id="admin-premium-stars" placeholder="100" min="1" max="10000">
         <label class="field-label" for="admin-free-limit">Бесплатных анализов в день</label>
         <input type="number" class="input" id="admin-free-limit" placeholder="3" min="0" max="100">
-        <button class="btn btn-outline admin-save-btn" id="btn-save-monetization">Сохранить цены</button>
+        <button class="btn btn-outline admin-save-btn" id="btn-save-monetization" type="button">Сохранить цены</button>
       </div>
       <div class="admin-form">
         <label class="field-label" for="admin-telegram-id">Telegram ID пользователя</label>
@@ -221,7 +497,7 @@
         <input type="number" class="input" id="admin-days" placeholder="Пусто = бессрочно" min="1" max="3650">
         <label class="field-label" for="admin-note">Заметка</label>
         <input type="text" class="input" id="admin-note" placeholder="Например: друг">
-        <button class="btn btn-primary" id="btn-grant-access">Выдать доступ</button>
+        <button class="btn btn-primary" id="btn-grant-access" type="button">Выдать доступ</button>
       </div>
       <div class="admin-subsection">
         <div class="admin-subsection-title">Пользователи</div>
@@ -234,13 +510,12 @@
     </div>
   </div>
 
-  <!-- Tab bar -->
   <nav class="tab-bar">
-    <div class="tab-bar-item active" data-tab="tab-analyze">
+    <div class="tab-bar-item active" data-tab="tab-today">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <path d="M3 12h18"/><path d="M12 3v18"/>
       </svg>
-      <span>Анализ</span>
+      <span>Сегодня</span>
     </div>
     <div class="tab-bar-item" data-tab="tab-diary">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -248,11 +523,29 @@
       </svg>
       <span>Дневник</span>
     </div>
-    <div class="tab-bar-item" data-tab="tab-stats">
+    <div class="tab-bar-item hidden" data-tab="tab-recipes">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        <path d="M8 3v7"/><path d="M12 3v7"/><path d="M8 10h4"/><path d="M10 10v11"/><path d="M17 3v18"/>
       </svg>
-      <span>Статистика</span>
+      <span>Рецепты</span>
+    </div>
+    <div class="tab-bar-item hidden" data-tab="tab-shopping">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+      </svg>
+      <span>Покупки</span>
+    </div>
+    <div class="tab-bar-item" data-tab="tab-profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/>
+      </svg>
+      <span>Профиль</span>
+    </div>
+    <div class="tab-bar-item hidden" id="nav-admin" data-tab="tab-admin">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5Z"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span>Админ</span>
     </div>
   </nav>
 

@@ -35,9 +35,10 @@ var api = (function() {
 
   return {
     // Анализ фото отправляется multipart/form-data.
-    analyzePhoto: function(file) {
+    analyzePhoto: function(file, note) {
       var formData = new FormData();
       formData.append('photo', file);
+      if (note) formData.append('note', note);
       return request('POST', '/api/analyze-photo', formData, true);
     },
 
@@ -57,6 +58,10 @@ var api = (function() {
 
     deleteMeal: function(id) {
       return request('DELETE', '/api/meals/' + id);
+    },
+
+    updateMeal: function(id, data) {
+      return request('PUT', '/api/meals/' + encodeURIComponent(id), data);
     },
 
     // Цели, статистика и монетизация.
@@ -120,6 +125,116 @@ var api = (function() {
 
     updateMonetizationSettings: function(data) {
       return request('PUT', '/api/admin/monetization', data);
+    },
+
+    getFavorites: function() {
+      return request('GET', '/api/favorites');
+    },
+
+    addFavorite: function(data) {
+      return request('POST', '/api/favorites', data);
+    },
+
+    deleteFavorite: function(id) {
+      return request('DELETE', '/api/favorites/' + encodeURIComponent(id));
+    },
+
+    addFavoriteToDiary: function(id, data) {
+      return request('POST', '/api/favorites/' + encodeURIComponent(id) + '/add-to-diary', data || {});
+    },
+
+    analyzePantryPhoto: function(file) {
+      var formData = new FormData();
+      formData.append('photo', file);
+      return request('POST', '/api/pantry/analyze-photo', formData, true);
+    },
+
+    addPantryItem: function(sessionId, data) {
+      return request('POST', '/api/pantry/sessions/' + encodeURIComponent(sessionId) + '/items', data);
+    },
+
+    updatePantryItem: function(id, data) {
+      return request('PUT', '/api/pantry/items/' + encodeURIComponent(id), data);
+    },
+
+    deletePantryItem: function(id) {
+      return request('DELETE', '/api/pantry/items/' + encodeURIComponent(id));
+    },
+
+    getInventory: function() {
+      return request('GET', '/api/inventory');
+    },
+
+    addInventoryItem: function(data) {
+      return request('POST', '/api/inventory', data);
+    },
+
+    updateInventoryItem: function(id, data) {
+      return request('PUT', '/api/inventory/' + encodeURIComponent(id), data);
+    },
+
+    deleteInventoryItem: function(id) {
+      return request('DELETE', '/api/inventory/' + encodeURIComponent(id));
+    },
+
+    consumeInventoryItem: function(id, data) {
+      return request('POST', '/api/inventory/' + encodeURIComponent(id) + '/consume', data);
+    },
+
+    addInventoryFromPantrySession: function(sessionId) {
+      return request('POST', '/api/inventory/from-pantry-session/' + encodeURIComponent(sessionId), {});
+    },
+
+    addInventoryFromShoppingItem: function(id) {
+      return request('POST', '/api/inventory/from-shopping-item/' + encodeURIComponent(id), {});
+    },
+
+    generateRecipes: function(data) {
+      return request('POST', '/api/recipes/generate', data);
+    },
+
+    addRecipeToDiary: function(id, data) {
+      return request('POST', '/api/recipes/' + encodeURIComponent(id) + '/add-to-diary', data || {});
+    },
+
+    cookRecipe: function(id, data) {
+      return request('POST', '/api/recipes/' + encodeURIComponent(id) + '/cook', data || {});
+    },
+
+    favoriteRecipe: function(id) {
+      return request('POST', '/api/recipes/' + encodeURIComponent(id) + '/favorite', {});
+    },
+
+    createShoppingListFromRecipe: function(recipeId, data) {
+      return request('POST', '/api/shopping-lists/from-recipe/' + encodeURIComponent(recipeId), data || {});
+    },
+
+    getCurrentShoppingList: function() {
+      return request('GET', '/api/shopping-lists/current');
+    },
+
+    createShoppingList: function(data) {
+      return request('POST', '/api/shopping-lists', data || {});
+    },
+
+    getShoppingList: function(id) {
+      return request('GET', '/api/shopping-lists/' + encodeURIComponent(id));
+    },
+
+    addShoppingItem: function(listId, data) {
+      return request('POST', '/api/shopping-lists/' + encodeURIComponent(listId) + '/items', data);
+    },
+
+    clearCheckedShoppingItems: function(listId) {
+      return request('DELETE', '/api/shopping-lists/' + encodeURIComponent(listId) + '/checked-items');
+    },
+
+    updateShoppingItem: function(id, data) {
+      return request('PUT', '/api/shopping-items/' + encodeURIComponent(id), data);
+    },
+
+    deleteShoppingItem: function(id) {
+      return request('DELETE', '/api/shopping-items/' + encodeURIComponent(id));
     }
   };
 })();

@@ -34,6 +34,52 @@ const getWeekTotals = db.prepare(`
 
 const getGoal = db.prepare('SELECT daily_calories FROM goals WHERE telegram_id = ?');
 
+function buildDayHint(totals, goal) {
+  const calories = totals.calories || 0;
+  const protein = totals.protein || 0;
+  const fat = totals.fat || 0;
+  const remaining = Math.round(goal - calories);
+
+  if (calories > goal) return `Перебор по калориям на ${Math.abs(remaining)} ккал. Дальше лучше выбрать легкую еду.`;
+  if (remaining <= 150 && remaining >= 0) return 'Цель по калориям почти закрыта.';
+  if (protein < 60 && calories > goal * 0.45) return 'Похоже, сегодня не хватает белка.';
+  if (fat > 80) return 'Сегодня заметный перебор по жирам.';
+  if (remaining > 250) return `Можно добавить легкий прием пищи до ${remaining} ккал.`;
+  return 'День идет ровно, продолжайте в том же темпе.';
+}
+
+function buildWeekSummary(days, goal) {
+  const total = days.reduce((acc, day) => ({
+    calories: acc.calories + (day.calories || 0),
+    protein: acc.protein + (day.protein || 0),
+    fat: acc.fat + (day.fat || 0),
+    carbs: acc.carbs + (day.carbs || 0)
+  }), { calories: 0, protein: 0, fat: 0, carbs: 0 });
+
+  const daysWithMeals = days.filter(day => day.meal_count > 0);
+  const divisor = daysWithMeals.length || days.length || 1;
+  const daysWithinGoal = days.filter(day => day.calories > 0 && day.calories <= goal).length;
+  const bestDay = daysWithMeals.slice().sort((a, b) => Math.abs(a.calories - goal) - Math.abs(b.calories - goal))[0] || null;
+  const problemDay = daysWithMeals.slice().sort((a, b) => Math.abs(b.calories - goal) - Math.abs(a.calories - goal))[0] || null;
+  const avgCalories = Math.round(total.calories / divisor);
+  const diff = avgCalories - goal;
+
+  return {
+    averages: {
+      calories: avgCalories,
+      protein: Number((total.protein / divisor).toFixed(1)),
+      fat: Number((total.fat / divisor).toFixed(1)),
+      carbs: Number((total.carbs / divisor).toFixed(1))
+    },
+    days_within_goal: daysWithinGoal,
+    best_day: bestDay,
+    problem_day: problemDay,
+    summary_text: diff === 0
+      ? 'В среднем неделя точно в цели.'
+      : `В среднем ты был ${Math.abs(diff)} ккал ${diff > 0 ? 'выше' : 'ниже'} цели.`
+  };
+}
+
 // Универсальный endpoint статистики: day по умолчанию или week/from-to.
 router.get('/stats', (req, res) => {
   try {
@@ -66,8 +112,7 @@ router.get('/stats', (req, res) => {
         days.push(found || { date: dateStr, meal_count: 0, calories: 0, protein: 0, fat: 0, carbs: 0 });
       }
 
-      const totalCals = days.reduce((s, d) => s + d.calories, 0);
-      const daysWithMeals = days.filter(d => d.meal_count > 0).length;
+      const weekSummary = buildWeekSummary(days, dailyCalories);
 
       res.json({
         success: true,
@@ -75,9 +120,11 @@ router.get('/stats', (req, res) => {
           period: 'week',
           goal: dailyCalories,
           days,
-          averages: {
-            calories: daysWithMeals > 0 ? Math.round(totalCals / daysWithMeals) : 0
-          }
+          averages: weekSummary.averages,
+          days_within_goal: weekSummary.days_within_goal,
+          best_day: weekSummary.best_day,
+          problem_day: weekSummary.problem_day,
+          summary_text: weekSummary.summary_text
         }
       });
     } else {
@@ -93,7 +140,8 @@ router.get('/stats', (req, res) => {
           date,
           goal: dailyCalories,
           totals,
-          remaining: Math.max(0, dailyCalories - totals.calories)
+          remaining: Math.max(0, dailyCalories - totals.calories),
+          hint: buildDayHint(totals, dailyCalories)
         }
       });
     }
