@@ -143,29 +143,107 @@ docker compose down
 
 ## API
 
+### Анализ еды
+
 | Метод | Endpoint | Описание |
 |-------|----------|----------|
 | POST | `/api/analyze-photo` | Анализ фото (multipart или base64 в body) |
 | POST | `/api/analyze-text` | Анализ текстового описания |
+
+### Дневник питания
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
 | GET | `/api/meals?date=YYYY-MM-DD` | Список приёмов пищи за дату |
 | POST | `/api/meals` | Добавить запись |
+| PUT | `/api/meals/:id` | Изменить запись, включая КБЖУ и тип приёма пищи |
 | DELETE | `/api/meals/:id` | Удалить запись |
+
+### Цели и статистика
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
 | GET | `/api/goals` | Получить цель калорий |
 | PUT | `/api/goals` | Установить цель калорий |
 | GET | `/api/stats?period=day` | Статистика за день |
 | GET | `/api/stats?period=week` | Статистика за неделю |
+
+### Избранные блюда
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/favorites` | Список избранных блюд |
+| POST | `/api/favorites` | Добавить блюдо в избранное |
+| PUT | `/api/favorites/:id` | Изменить избранное блюдо |
+| DELETE | `/api/favorites/:id` | Удалить блюдо из избранного |
+| POST | `/api/favorites/:id/add-to-diary` | Добавить избранное блюдо в дневник |
+
+### Монетизация и доступ
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/access` | Статус доступа текущего пользователя |
 | GET | `/api/monetization` | Статус доступа, лимит и цена Premium |
 | POST | `/api/payments/subscription-invoice` | Создать invoice-ссылку Telegram Stars |
+
+### Админка
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
 | GET | `/api/admin/overview` | Сводка админки: пользователи, активность, платежи и лимиты |
 | GET | `/api/admin/payments` | Последние платежи Telegram Stars (только админ) |
 | GET | `/api/admin/monetization` | Получить настройки монетизации (только админ) |
 | PUT | `/api/admin/monetization` | Изменить цену Premium и free-лимит (только админ) |
+| GET | `/api/admin/entitlements` | Список выданных доступов (только админ) |
+| POST | `/api/admin/entitlements` | Выдать бесплатный доступ пользователю |
+| DELETE | `/api/admin/entitlements/:telegramId` | Отозвать бесплатный или Premium-доступ |
 | GET | `/api/admin/users?limit=25&offset=0` | Список пользователей с поиском, фильтрами и пагинацией (только админ) |
 | GET | `/api/admin/users/:telegramId` | Карточка пользователя (только админ) |
+| PUT | `/api/admin/users/:telegramId/flags` | Обновить админскую заметку и флаги пользователя |
 | POST | `/api/admin/users/:telegramId/block` | Заблокировать AI-анализ и оплату для пользователя |
 | POST | `/api/admin/users/:telegramId/unblock` | Снять блокировку пользователя |
 | POST | `/api/admin/users/:telegramId/delete` | Мягко скрыть пользователя из обычного списка |
 | POST | `/api/admin/users/:telegramId/restore` | Восстановить мягко скрытого пользователя |
+
+### Фото продуктов и рецепты (скрыто в текущем UI)
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| POST | `/api/pantry/analyze-photo` | Распознать продукты по фото |
+| GET | `/api/pantry/sessions/:id` | Получить сессию распознавания продуктов |
+| POST | `/api/pantry/sessions/:id/items` | Добавить продукт в сессию |
+| PUT | `/api/pantry/items/:id` | Изменить распознанный продукт |
+| DELETE | `/api/pantry/items/:id` | Удалить распознанный продукт |
+| GET | `/api/inventory` | Список текущих продуктов пользователя |
+| POST | `/api/inventory` | Добавить продукт в остатки |
+| PUT | `/api/inventory/:id` | Изменить продукт в остатках |
+| DELETE | `/api/inventory/:id` | Удалить продукт из остатков |
+| POST | `/api/inventory/:id/consume` | Списать продукт из остатков |
+| POST | `/api/inventory/from-pantry-session/:sessionId` | Перенести продукты из распознавания в остатки |
+| POST | `/api/inventory/from-shopping-item/:id` | Добавить купленный товар в остатки |
+| POST | `/api/recipes/generate` | Сгенерировать рецепты из продуктов |
+| GET | `/api/recipes/:id` | Получить рецепт |
+| POST | `/api/recipes/:id/add-to-diary` | Добавить рецепт в дневник |
+| POST | `/api/recipes/:id/cook` | Приготовить рецепт: добавить в дневник и списать продукты |
+| POST | `/api/recipes/:id/favorite` | Добавить рецепт в избранное |
+
+### Покупки (скрыто в текущем UI)
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
+| GET | `/api/shopping-lists/current` | Получить активный список покупок |
+| POST | `/api/shopping-lists` | Создать ручной список покупок |
+| POST | `/api/shopping-lists/from-recipe/:recipeId` | Создать/дополнить список из рецепта |
+| GET | `/api/shopping-lists/:id` | Получить список покупок |
+| POST | `/api/shopping-lists/:id/items` | Добавить товар в список |
+| DELETE | `/api/shopping-lists/:id/checked-items` | Удалить купленные товары |
+| PUT | `/api/shopping-items/:id` | Изменить товар или отметку “куплено” |
+| DELETE | `/api/shopping-items/:id` | Удалить товар |
+
+### Telegram webhook
+
+| Метод | Endpoint | Описание |
+|-------|----------|----------|
 | POST | `/telegram/webhook` | Webhook Telegram для платежей (без `X-Telegram-Init-Data`) |
 
 Все `/api/*` запросы требуют заголовок `X-Telegram-Init-Data` (кроме режима разработки). `/telegram/webhook` вызывается Telegram Bot API и не использует Mini App initData.
