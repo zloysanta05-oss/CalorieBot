@@ -41,6 +41,15 @@ router.post('/analyze-photo', upload.single('photo'), async (req, res) => {
     const usage = recordAnalysis(req.telegramUser.id);
     res.json({ success: true, data: result, usage });
   } catch (err) {
+    if (err.code === 'user_blocked') {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: err.code,
+        message: 'Доступ к анализу ограничен администратором.',
+        data: err.plan
+      });
+    }
+
     if (err.code === 'free_limit_reached') {
       return res.status(err.statusCode).json({
         success: false,
@@ -83,6 +92,15 @@ router.post('/analyze-text', async (req, res) => {
     const usage = recordAnalysis(req.telegramUser.id);
     res.json({ success: true, data: result, usage });
   } catch (err) {
+    if (err.code === 'user_blocked') {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: err.code,
+        message: 'Доступ к анализу ограничен администратором.',
+        data: err.plan
+      });
+    }
+
     if (err.code === 'free_limit_reached') {
       return res.status(err.statusCode).json({
         success: false,

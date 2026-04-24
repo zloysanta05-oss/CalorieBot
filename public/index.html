@@ -482,30 +482,84 @@
   <!-- Tab: Admin -->
   <div id="tab-admin" class="tab-content hidden">
     <div class="admin-section">
-      <h3>Админ</h3>
-      <div class="admin-form admin-pricing">
-        <label class="field-label" for="admin-premium-stars">Цена Premium, Stars за 30 дней</label>
-        <input type="number" class="input" id="admin-premium-stars" placeholder="100" min="1" max="10000">
-        <label class="field-label" for="admin-free-limit">Бесплатных анализов в день</label>
-        <input type="number" class="input" id="admin-free-limit" placeholder="3" min="0" max="100">
-        <button class="btn btn-outline admin-save-btn" id="btn-save-monetization" type="button">Сохранить цены</button>
+      <div class="section-header-row">
+        <div>
+          <h3>Админ</h3>
+          <p class="section-note">Управление пользователями, доступом, лимитами и оплатами.</p>
+        </div>
       </div>
-      <div class="admin-form">
-        <label class="field-label" for="admin-telegram-id">Telegram ID пользователя</label>
-        <input type="number" class="input" id="admin-telegram-id" placeholder="123456789">
-        <label class="field-label" for="admin-days">Срок доступа, дней</label>
-        <input type="number" class="input" id="admin-days" placeholder="Пусто = бессрочно" min="1" max="3650">
-        <label class="field-label" for="admin-note">Заметка</label>
-        <input type="text" class="input" id="admin-note" placeholder="Например: друг">
-        <button class="btn btn-primary" id="btn-grant-access" type="button">Выдать доступ</button>
+
+      <div class="admin-tabs" role="tablist" aria-label="Разделы админки">
+        <button class="admin-tab-btn active" type="button" data-admin-panel="overview">Обзор</button>
+        <button class="admin-tab-btn" type="button" data-admin-panel="users">Пользователи</button>
+        <button class="admin-tab-btn" type="button" data-admin-panel="access">Доступы</button>
+        <button class="admin-tab-btn" type="button" data-admin-panel="money">Монетизация</button>
+        <button class="admin-tab-btn" type="button" data-admin-panel="limits">AI и лимиты</button>
       </div>
-      <div class="admin-subsection">
-        <div class="admin-subsection-title">Пользователи</div>
+
+      <div class="admin-panel active" id="admin-panel-overview">
+        <div class="admin-metrics" id="admin-overview"></div>
+        <div class="admin-subsection">
+          <div class="admin-subsection-title">Последние платежи</div>
+          <div class="admin-list" id="admin-overview-payments"></div>
+        </div>
+      </div>
+
+      <div class="admin-panel" id="admin-panel-users">
+        <div class="admin-search-row">
+          <input type="text" class="input" id="admin-user-search" placeholder="Поиск: ID, имя или username">
+        </div>
+        <div class="admin-filter-row" id="admin-user-filters">
+          <button class="admin-filter active" type="button" data-filter="active">Все</button>
+          <button class="admin-filter" type="button" data-filter="premium">Premium</button>
+          <button class="admin-filter" type="button" data-filter="gifted">Gifted</button>
+          <button class="admin-filter" type="button" data-filter="free">Free</button>
+          <button class="admin-filter" type="button" data-filter="blocked">Блок</button>
+          <button class="admin-filter" type="button" data-filter="deleted">Удаленные</button>
+        </div>
         <div class="admin-list" id="admin-users"></div>
+        <div class="admin-pagination" id="admin-users-pagination"></div>
+        <div class="admin-user-card hidden" id="admin-user-card"></div>
       </div>
-      <div class="admin-subsection">
-        <div class="admin-subsection-title">Выданные доступы</div>
-        <div class="admin-list" id="admin-entitlements"></div>
+
+      <div class="admin-panel" id="admin-panel-access">
+        <div class="admin-form">
+          <label class="field-label" for="admin-telegram-id">Telegram ID пользователя</label>
+          <input type="number" class="input" id="admin-telegram-id" placeholder="123456789">
+          <label class="field-label" for="admin-days">Срок доступа, дней</label>
+          <input type="number" class="input" id="admin-days" placeholder="Пусто = бессрочно" min="1" max="3650">
+          <label class="field-label" for="admin-note">Заметка</label>
+          <input type="text" class="input" id="admin-note" placeholder="Например: друг">
+          <button class="btn btn-primary btn-small" id="btn-grant-access" type="button">Выдать</button>
+        </div>
+        <div class="admin-subsection">
+          <div class="admin-subsection-title">Выданные доступы</div>
+          <div class="admin-list" id="admin-entitlements"></div>
+        </div>
+      </div>
+
+      <div class="admin-panel" id="admin-panel-money">
+        <div class="admin-form admin-pricing">
+          <label class="field-label" for="admin-premium-stars">Цена Premium, Stars за 30 дней</label>
+          <input type="number" class="input" id="admin-premium-stars" placeholder="100" min="1" max="10000">
+          <button class="btn btn-primary btn-small" id="btn-save-monetization" type="button">Сохранить</button>
+        </div>
+        <div class="admin-subsection">
+          <div class="admin-subsection-title">Платежи</div>
+          <div class="admin-list" id="admin-payments"></div>
+        </div>
+      </div>
+
+      <div class="admin-panel" id="admin-panel-limits">
+        <div class="admin-form admin-pricing">
+          <label class="field-label" for="admin-free-limit">Бесплатных анализов в день</label>
+          <input type="number" class="input" id="admin-free-limit" placeholder="3" min="0" max="100">
+          <button class="btn btn-outline btn-small admin-save-btn" id="btn-save-limits" type="button">Сохранить</button>
+        </div>
+        <div class="admin-subsection">
+          <div class="admin-subsection-title">Заблокированные пользователи</div>
+          <div class="admin-list" id="admin-blocked-users"></div>
+        </div>
       </div>
     </div>
   </div>

@@ -154,6 +154,15 @@ router.post('/recipes/generate', async (req, res) => {
     const usage = recordAnalysis(req.telegramUser.id);
     res.json({ success: true, data: { recipes }, usage });
   } catch (err) {
+    if (err.code === 'user_blocked') {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: err.code,
+        message: 'Доступ к подбору рецептов ограничен администратором.',
+        data: err.plan
+      });
+    }
+
     if (err.code === 'free_limit_reached') {
       return res.status(err.statusCode).json({
         success: false,

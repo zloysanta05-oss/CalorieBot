@@ -50,6 +50,11 @@ db.exec(`
     username TEXT,
     language_code TEXT,
     is_premium INTEGER DEFAULT 0,
+    is_blocked INTEGER NOT NULL DEFAULT 0,
+    blocked_at TEXT,
+    blocked_reason TEXT,
+    deleted_at TEXT,
+    admin_note TEXT,
     first_seen_at TEXT NOT NULL DEFAULT (datetime('now')),
     last_seen_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -206,5 +211,10 @@ function ensureColumn(table, column, definition) {
 ensureColumn('meals', 'items_json', 'TEXT');
 ensureColumn('favorite_meals', 'items_json', 'TEXT');
 ensureColumn('favorite_meals', 'recipe_steps_json', 'TEXT');
+ensureColumn('users', 'is_blocked', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('users', 'blocked_at', 'TEXT');
+ensureColumn('users', 'blocked_reason', 'TEXT');
+ensureColumn('users', 'deleted_at', 'TEXT');
+ensureColumn('users', 'admin_note', 'TEXT');
 
 module.exports = db;

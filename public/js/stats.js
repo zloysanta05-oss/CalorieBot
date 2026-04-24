@@ -263,54 +263,141 @@ var profileTab = (function() {
 
 var adminTab = (function() {
   var currentAccess = null;
+  var settings = { premium_stars: 100, free_daily_limit: 3 };
+  var activePanel = 'overview';
+  var userFilter = 'active';
+  var usersLimit = 25;
+  var usersOffset = 0;
+  var usersHasMore = false;
+  var usersTotal = 0;
+  var searchTimer = null;
 
   function init() {
+    document.querySelectorAll('.admin-tab-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        switchPanel(btn.dataset.adminPanel);
+      });
+    });
+
     document.getElementById('btn-save-monetization').addEventListener('click', saveMonetization);
+    document.getElementById('btn-save-limits').addEventListener('click', saveMonetization);
     document.getElementById('btn-grant-access').addEventListener('click', grantAccess);
+
+    document.getElementById('admin-user-search').addEventListener('input', function() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function() {
+        resetUserPagination();
+        loadAdminUsers();
+      }, 250);
+    });
+
+    document.getElementById('admin-user-filters').addEventListener('click', function(e) {
+      var btn = e.target.closest('.admin-filter');
+      if (!btn) return;
+      userFilter = btn.dataset.filter || 'active';
+      document.querySelectorAll('.admin-filter').forEach(function(item) {
+        item.classList.toggle('active', item === btn);
+      });
+      resetUserPagination();
+      loadAdminUsers();
+    });
+
+    document.getElementById('admin-users-pagination').addEventListener('click', function(e) {
+      var btn = e.target.closest('.admin-load-more');
+      if (!btn || !usersHasMore) return;
+      usersOffset += usersLimit;
+      loadAdminUsers(true);
+    });
 
     document.getElementById('admin-entitlements').addEventListener('click', function(e) {
       var btn = e.target.closest('.admin-revoke');
       if (!btn) return;
-
-      api.revokeAccess(btn.dataset.id).then(function() {
-        showToast('Доступ отозван');
-        haptic('success');
-        loadAdminEntitlements();
-      }).catch(function() {
-        showToast('Не удалось отозвать доступ', 'error');
-      });
+      revokeAccess(btn.dataset.id);
     });
 
     document.getElementById('admin-users').addEventListener('click', function(e) {
       var row = e.target.closest('.admin-user-row');
       if (!row) return;
-
-      document.getElementById('admin-telegram-id').value = row.dataset.id;
-      showToast('Telegram ID подставлен');
-      haptic('light');
+      openUserCard(row.dataset.id);
     });
+
+    document.getElementById('admin-blocked-users').addEventListener('click', function(e) {
+      var row = e.target.closest('.admin-user-row');
+      if (!row) return;
+      switchPanel('users');
+      openUserCard(row.dataset.id);
+    });
+
+    document.getElementById('admin-user-card').addEventListener('click', handleUserCardClick);
   }
 
   function show() {
     loadAdmin();
   }
 
+  function switchPanel(panel) {
+    activePanel = panel || 'overview';
+    document.querySelectorAll('.admin-tab-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.adminPanel === activePanel);
+    });
+    document.querySelectorAll('.admin-panel').forEach(function(panelEl) {
+      panelEl.classList.toggle('active', panelEl.id === 'admin-panel-' + activePanel);
+    });
+    loadPanel(activePanel);
+  }
+
+  function loadPanel(panel) {
+    if (!currentAccess || !currentAccess.is_admin) return;
+    if (panel === 'overview') {
+      loadOverview();
+      loadAdminPayments('admin-overview-payments', 5);
+    }
+    if (panel === 'users') loadAdminUsers();
+    if (panel === 'access') loadAdminEntitlements();
+    if (panel === 'money') loadAdminPayments('admin-payments');
+    if (panel === 'limits') loadBlockedUsers();
+  }
+
   function loadAdmin() {
     api.getMonetization().then(function(res) {
       currentAccess = res.data.access;
       if (!currentAccess || !currentAccess.is_admin) {
-        document.getElementById('admin-users').innerHTML = '<div class="admin-empty">Нет прав администратора</div>';
-        document.getElementById('admin-entitlements').innerHTML = '';
+        document.getElementById('admin-overview').innerHTML = '<div class="admin-empty">Нет прав администратора</div>';
         return;
       }
 
-      document.getElementById('admin-premium-stars').value = res.data.settings.premium_stars;
-      document.getElementById('admin-free-limit').value = res.data.settings.free_daily_limit;
-      loadAdminUsers();
-      loadAdminEntitlements();
+      settings = res.data.settings || settings;
+      document.getElementById('admin-premium-stars').value = settings.premium_stars;
+      document.getElementById('admin-free-limit').value = settings.free_daily_limit;
+      loadPanel(activePanel);
     }).catch(function() {
       showToast('Не удалось загрузить админку', 'error');
     });
+  }
+
+  function loadOverview() {
+    api.getAdminOverview().then(function(res) {
+      var data = res.data || {};
+      var counts = data.access_counts || {};
+      document.getElementById('admin-overview').innerHTML = [
+        metricCard('Пользователи', data.total_users || 0, 'активны сегодня: ' + (data.active_today || 0)),
+        metricCard('Активность 7 дней', data.active_7d || 0, 'анализов сегодня: ' + (data.analyses_today || 0)),
+        metricCard('Premium', counts.subscription || 0, 'Gifted: ' + (counts.gifted || 0) + ' · Owner: ' + (counts.owner || 0)),
+        metricCard('Выручка', data.revenue_stars || 0, 'платежей: ' + (data.paid_payments || 0) + ' · Stars'),
+        metricCard('Цена Premium', data.premium_stars || 0, 'Stars за 30 дней'),
+        metricCard('Free limit', data.free_daily_limit || 0, 'анализов в день')
+      ].join('');
+    }).catch(function() {
+      document.getElementById('admin-overview').innerHTML = '<div class="admin-empty">Не удалось загрузить обзор</div>';
+    });
+  }
+
+  function metricCard(title, value, note) {
+    return '<div class="admin-metric-card">' +
+      '<div class="admin-metric-title">' + escapeHtml(title) + '</div>' +
+      '<div class="admin-metric-value">' + escapeHtml(value) + '</div>' +
+      '<div class="admin-metric-note">' + escapeHtml(note) + '</div>' +
+    '</div>';
   }
 
   function saveMonetization() {
@@ -321,7 +408,6 @@ var adminTab = (function() {
       showToast('Укажите цену от 1 до 10000 Stars', 'error');
       return;
     }
-
     if (isNaN(freeLimit) || freeLimit < 0 || freeLimit > 100) {
       showToast('Укажите бесплатный лимит от 0 до 100', 'error');
       return;
@@ -330,12 +416,14 @@ var adminTab = (function() {
     api.updateMonetizationSettings({
       premium_stars: premiumStars,
       free_daily_limit: freeLimit
-    }).then(function() {
-      showToast('Цены сохранены');
+    }).then(function(res) {
+      settings = res.data || settings;
+      showToast('Настройки сохранены');
       haptic('success');
       profileTab.refresh();
+      loadOverview();
     }).catch(function(err) {
-      showToast(err.message || 'Ошибка сохранения цен', 'error');
+      showToast(err.message || 'Ошибка сохранения настроек', 'error');
     });
   }
 
@@ -360,9 +448,25 @@ var adminTab = (function() {
       document.getElementById('admin-days').value = '';
       document.getElementById('admin-note').value = '';
       loadAdminEntitlements();
+      resetUserPagination();
       loadAdminUsers();
+      loadOverview();
     }).catch(function(err) {
       showToast(err.message || 'Ошибка выдачи доступа', 'error');
+    });
+  }
+
+  function revokeAccess(telegramId) {
+    if (!confirm('Отозвать доступ у пользователя ' + telegramId + '?')) return;
+    api.revokeAccess(telegramId).then(function() {
+      showToast('Доступ отозван');
+      haptic('success');
+      loadAdminEntitlements();
+      resetUserPagination();
+      loadAdminUsers();
+      loadOverview();
+    }).catch(function() {
+      showToast('Не удалось отозвать доступ', 'error');
     });
   }
 
@@ -392,29 +496,229 @@ var adminTab = (function() {
     });
   }
 
-  function loadAdminUsers() {
+  function loadAdminUsers(append) {
     if (!currentAccess || !currentAccess.is_admin) return;
 
-    api.getAdminUsers().then(function(res) {
-      var rows = res.data.users || [];
-      var container = document.getElementById('admin-users');
+    var query = document.getElementById('admin-user-search').value.trim();
+    api.getAdminUsers(query, userFilter, usersLimit, usersOffset).then(function(res) {
+      var data = res.data || {};
+      usersHasMore = Boolean(data.has_more);
+      usersTotal = data.total || 0;
+      renderUserList(document.getElementById('admin-users'), data.users || [], '', Boolean(append));
+      renderUsersPagination((data.offset || 0) + (data.users || []).length);
+    }).catch(function() {
+      showToast('Не удалось загрузить пользователей', 'error');
+    });
+  }
+
+  function loadBlockedUsers() {
+    api.getAdminUsers('', 'blocked', 100, 0).then(function(res) {
+      renderUserList(document.getElementById('admin-blocked-users'), res.data.users || [], 'Заблокированных пользователей нет');
+    }).catch(function() {
+      document.getElementById('admin-blocked-users').innerHTML = '<div class="admin-empty">Не удалось загрузить список</div>';
+    });
+  }
+
+  function resetUserPagination() {
+    usersOffset = 0;
+    usersHasMore = false;
+    usersTotal = 0;
+    document.getElementById('admin-users-pagination').innerHTML = '';
+  }
+
+  function renderUserList(container, rows, emptyText, append) {
+    if (rows.length === 0) {
+      if (!append) {
+        container.innerHTML = '<div class="admin-empty">' + escapeHtml(emptyText || 'Пользователей пока нет') + '</div>';
+      }
+      return;
+    }
+
+    var html = rows.map(function(user) {
+      var state = [];
+      if (user.is_blocked) state.push('заблокирован');
+      if (user.deleted_at) state.push('удален');
+      return '<button class="admin-user-row" type="button" data-id="' + user.telegram_id + '">' +
+        '<div class="admin-row-main">' +
+          '<div class="admin-row-id">' + escapeHtml(formatUserName(user)) + '</div>' +
+          '<div class="admin-row-meta">' + escapeHtml(formatUserMeta(user)) + '</div>' +
+          (state.length ? '<div class="admin-row-warning">' + escapeHtml(state.join(' · ')) + '</div>' : '') +
+        '</div>' +
+        '<span class="access-badge' + (user.has_premium ? ' premium' : '') + '">' + escapeHtml(formatAccessLabel(user)) + '</span>' +
+      '</button>';
+    }).join('');
+
+    container.innerHTML = append ? container.innerHTML + html : html;
+  }
+
+  function renderUsersPagination(shown) {
+    var container = document.getElementById('admin-users-pagination');
+    if (!usersTotal) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = '<div class="admin-pagination-note">Показано ' + shown + ' из ' + usersTotal + '</div>' +
+      (usersHasMore ? '<button class="btn btn-secondary btn-small admin-load-more" type="button">Показать еще</button>' : '');
+  }
+
+  function openUserCard(telegramId) {
+    api.getAdminUser(telegramId).then(function(res) {
+      renderUserCard(res.data);
+      haptic('light');
+    }).catch(function(err) {
+      showToast(err.message || 'Не удалось открыть пользователя', 'error');
+    });
+  }
+
+  function renderUserCard(data) {
+    var user = data.user;
+    var entitlement = data.entitlement;
+    var payments = data.payments || [];
+    var card = document.getElementById('admin-user-card');
+    var dangerText = user.deleted_at ? 'Восстановить' : 'Удалить';
+    var blockText = user.is_blocked ? 'Разблокировать' : 'Заблокировать';
+
+    card.classList.remove('hidden');
+    card.innerHTML = '<div class="section-header-row">' +
+        '<div><h3>' + escapeHtml(formatUserName(user)) + '</h3><p class="section-note">ID: ' + user.telegram_id + '</p></div>' +
+        '<button class="btn btn-secondary btn-small admin-card-close" type="button">Закрыть</button>' +
+      '</div>' +
+      '<div class="admin-user-facts">' +
+        fact('Статус', formatAccessLabel(user)) +
+        fact('Сегодня', (user.today_analysis_count || 0) + ' анализов') +
+        fact('Первый вход', user.first_seen_at || '-') +
+        fact('Последний вход', user.last_seen_at || '-') +
+        fact('Доступ', entitlement ? formatEntitlementMeta(entitlement) : 'нет подаренного доступа') +
+        fact('Платежи', payments.length ? payments.length + ' последних записей' : 'нет платежей') +
+      '</div>' +
+      '<label class="field-label" for="admin-user-note">Заметка админа</label>' +
+      '<textarea class="textarea" id="admin-user-note" rows="2" placeholder="Внутренняя заметка">' + escapeHtml(user.admin_note || '') + '</textarea>' +
+      '<div class="admin-card-actions">' +
+        '<button class="btn btn-primary btn-small admin-card-grant" type="button" data-id="' + user.telegram_id + '">Выдать доступ</button>' +
+        (entitlement ? '<button class="btn btn-outline btn-small admin-card-revoke" type="button" data-id="' + user.telegram_id + '">Отозвать доступ</button>' : '') +
+        '<button class="btn btn-outline btn-small admin-card-note" type="button" data-id="' + user.telegram_id + '">Сохранить заметку</button>' +
+        '<button class="btn btn-outline btn-small admin-card-block" type="button" data-id="' + user.telegram_id + '">' + blockText + '</button>' +
+        '<button class="btn btn-danger btn-small admin-card-delete" type="button" data-id="' + user.telegram_id + '">' + dangerText + '</button>' +
+      '</div>';
+  }
+
+  function fact(label, value) {
+    return '<div class="admin-user-fact"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
+  }
+
+  function handleUserCardClick(e) {
+    var close = e.target.closest('.admin-card-close');
+    if (close) {
+      document.getElementById('admin-user-card').classList.add('hidden');
+      return;
+    }
+
+    var grant = e.target.closest('.admin-card-grant');
+    if (grant) {
+      document.getElementById('admin-telegram-id').value = grant.dataset.id;
+      switchPanel('access');
+      showToast('ID подставлен в выдачу доступа');
+      return;
+    }
+
+    var note = e.target.closest('.admin-card-note');
+    if (note) {
+      api.updateAdminUserFlags(note.dataset.id, {
+        admin_note: document.getElementById('admin-user-note').value
+      }).then(function(res) {
+        renderUserCard(res.data);
+        showToast('Заметка сохранена');
+      }).catch(function(err) {
+        showToast(err.message || 'Не удалось сохранить заметку', 'error');
+      });
+      return;
+    }
+
+    var revoke = e.target.closest('.admin-card-revoke');
+    if (revoke) {
+      revokeAccess(revoke.dataset.id);
+      document.getElementById('admin-user-card').classList.add('hidden');
+      return;
+    }
+
+    var block = e.target.closest('.admin-card-block');
+    if (block) {
+      toggleBlock(block.dataset.id);
+      return;
+    }
+
+    var del = e.target.closest('.admin-card-delete');
+    if (del) {
+      toggleDelete(del.dataset.id);
+    }
+  }
+
+  function toggleBlock(telegramId) {
+    api.getAdminUser(telegramId).then(function(res) {
+      var user = res.data.user;
+      if (user.is_blocked) {
+        return api.unblockAdminUser(telegramId);
+      }
+
+      if (!confirm('Заблокировать AI и оплату для пользователя ' + telegramId + '?')) return null;
+      return api.blockAdminUser(telegramId, { reason: 'manual_admin_block' });
+    }).then(function(res) {
+      if (!res) return;
+      renderUserCard(res.data);
+      resetUserPagination();
+      loadAdminUsers();
+      loadBlockedUsers();
+      loadOverview();
+      showToast('Статус пользователя обновлен');
+    }).catch(function(err) {
+      showToast(err.message || 'Не удалось обновить блокировку', 'error');
+    });
+  }
+
+  function toggleDelete(telegramId) {
+    api.getAdminUser(telegramId).then(function(res) {
+      var user = res.data.user;
+      if (user.deleted_at) {
+        return api.restoreAdminUser(telegramId);
+      }
+
+      if (!confirm('Скрыть пользователя ' + telegramId + ' из обычных списков?')) return null;
+      return api.softDeleteAdminUser(telegramId);
+    }).then(function(res) {
+      if (!res) return;
+      renderUserCard(res.data);
+      resetUserPagination();
+      loadAdminUsers();
+      loadOverview();
+      showToast('Статус пользователя обновлен');
+    }).catch(function(err) {
+      showToast(err.message || 'Не удалось изменить пользователя', 'error');
+    });
+  }
+
+  function loadAdminPayments(containerId, limit) {
+    api.getAdminPayments().then(function(res) {
+      var rows = res.data.payments || [];
+      if (limit) rows = rows.slice(0, limit);
+      var container = document.getElementById(containerId);
 
       if (rows.length === 0) {
-        container.innerHTML = '<div class="admin-empty">Пользователей пока нет</div>';
+        container.innerHTML = '<div class="admin-empty">Платежей пока нет</div>';
         return;
       }
 
-      container.innerHTML = rows.map(function(user) {
-        return '<button class="admin-user-row" type="button" data-id="' + user.telegram_id + '">' +
+      container.innerHTML = rows.map(function(payment) {
+        return '<div class="admin-row">' +
           '<div class="admin-row-main">' +
-            '<div class="admin-row-id">' + escapeHtml(formatUserName(user)) + '</div>' +
-            '<div class="admin-row-meta">' + escapeHtml(formatUserMeta(user)) + '</div>' +
+            '<div class="admin-row-id">' + escapeHtml(formatUserName(payment)) + '</div>' +
+            '<div class="admin-row-meta">' + escapeHtml(formatPaymentMeta(payment)) + '</div>' +
           '</div>' +
-          '<span class="access-badge' + (user.has_premium ? ' premium' : '') + '">' + escapeHtml(formatAccessLabel(user)) + '</span>' +
-        '</button>';
+          '<span class="access-badge' + (payment.status === 'paid' ? ' premium' : '') + '">' + escapeHtml(payment.status) + '</span>' +
+        '</div>';
       }).join('');
     }).catch(function() {
-      showToast('Не удалось загрузить пользователей', 'error');
+      document.getElementById(containerId).innerHTML = '<div class="admin-empty">Не удалось загрузить платежи</div>';
     });
   }
 
@@ -445,6 +749,16 @@ var adminTab = (function() {
     parts.push(row.expires_at ? 'до ' + row.expires_at : 'бессрочно');
     if (row.note) parts.push(row.note);
     if (row.granted_by) parts.push('выдал: ' + row.granted_by);
+    return parts.join(' · ');
+  }
+
+  function formatPaymentMeta(payment) {
+    var parts = [];
+    parts.push('ID: ' + payment.telegram_id);
+    parts.push((payment.amount_stars || 0) + ' Stars');
+    parts.push(payment.plan || 'premium_month');
+    if (payment.paid_at) parts.push('оплачен: ' + payment.paid_at);
+    else if (payment.created_at) parts.push('создан: ' + payment.created_at);
     return parts.join(' · ');
   }
 

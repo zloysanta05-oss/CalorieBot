@@ -98,8 +98,47 @@ var api = (function() {
       return request('GET', '/api/admin/entitlements');
     },
 
-    getAdminUsers: function() {
-      return request('GET', '/api/admin/users');
+    getAdminOverview: function() {
+      return request('GET', '/api/admin/overview');
+    },
+
+    getAdminPayments: function() {
+      return request('GET', '/api/admin/payments');
+    },
+
+    getAdminUsers: function(query, filter, limit, offset) {
+      var url = '/api/admin/users';
+      var params = [];
+      if (query) params.push('query=' + encodeURIComponent(query));
+      if (filter) params.push('filter=' + encodeURIComponent(filter));
+      if (limit) params.push('limit=' + encodeURIComponent(limit));
+      if (offset) params.push('offset=' + encodeURIComponent(offset));
+      if (params.length) url += '?' + params.join('&');
+      return request('GET', url);
+    },
+
+    getAdminUser: function(telegramId) {
+      return request('GET', '/api/admin/users/' + encodeURIComponent(telegramId));
+    },
+
+    updateAdminUserFlags: function(telegramId, data) {
+      return request('PUT', '/api/admin/users/' + encodeURIComponent(telegramId) + '/flags', data);
+    },
+
+    blockAdminUser: function(telegramId, data) {
+      return request('POST', '/api/admin/users/' + encodeURIComponent(telegramId) + '/block', data || {});
+    },
+
+    unblockAdminUser: function(telegramId) {
+      return request('POST', '/api/admin/users/' + encodeURIComponent(telegramId) + '/unblock', {});
+    },
+
+    softDeleteAdminUser: function(telegramId) {
+      return request('POST', '/api/admin/users/' + encodeURIComponent(telegramId) + '/delete', {});
+    },
+
+    restoreAdminUser: function(telegramId) {
+      return request('POST', '/api/admin/users/' + encodeURIComponent(telegramId) + '/restore', {});
     },
 
     grantAccess: function(data) {

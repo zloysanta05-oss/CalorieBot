@@ -84,6 +84,15 @@ router.post('/pantry/analyze-photo', upload.single('photo'), async (req, res) =>
       usage
     });
   } catch (err) {
+    if (err.code === 'user_blocked') {
+      return res.status(err.statusCode).json({
+        success: false,
+        error: err.code,
+        message: 'Доступ к анализу ограничен администратором.',
+        data: err.plan
+      });
+    }
+
     if (err.code === 'free_limit_reached') {
       return res.status(err.statusCode).json({
         success: false,

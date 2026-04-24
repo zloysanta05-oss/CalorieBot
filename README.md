@@ -156,9 +156,16 @@ docker compose down
 | GET | `/api/stats?period=week` | Статистика за неделю |
 | GET | `/api/monetization` | Статус доступа, лимит и цена Premium |
 | POST | `/api/payments/subscription-invoice` | Создать invoice-ссылку Telegram Stars |
+| GET | `/api/admin/overview` | Сводка админки: пользователи, активность, платежи и лимиты |
+| GET | `/api/admin/payments` | Последние платежи Telegram Stars (только админ) |
 | GET | `/api/admin/monetization` | Получить настройки монетизации (только админ) |
 | PUT | `/api/admin/monetization` | Изменить цену Premium и free-лимит (только админ) |
-| GET | `/api/admin/users` | Список пользователей и их статусы (только админ) |
+| GET | `/api/admin/users?limit=25&offset=0` | Список пользователей с поиском, фильтрами и пагинацией (только админ) |
+| GET | `/api/admin/users/:telegramId` | Карточка пользователя (только админ) |
+| POST | `/api/admin/users/:telegramId/block` | Заблокировать AI-анализ и оплату для пользователя |
+| POST | `/api/admin/users/:telegramId/unblock` | Снять блокировку пользователя |
+| POST | `/api/admin/users/:telegramId/delete` | Мягко скрыть пользователя из обычного списка |
+| POST | `/api/admin/users/:telegramId/restore` | Восстановить мягко скрытого пользователя |
 | POST | `/telegram/webhook` | Webhook Telegram для платежей (без `X-Telegram-Init-Data`) |
 
 Все `/api/*` запросы требуют заголовок `X-Telegram-Init-Data` (кроме режима разработки). `/telegram/webhook` вызывается Telegram Bot API и не использует Mini App initData.

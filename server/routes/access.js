@@ -5,6 +5,15 @@ const {
   revokeAccess,
   listEntitlements,
   listUsers,
+  listUsersPage,
+  getUserDetails,
+  updateUserFlags,
+  blockUser,
+  unblockUser,
+  softDeleteUser,
+  restoreUser,
+  getAdminOverview,
+  listPayments,
   isAdmin,
   isOwner
 } = require('../services/access');
@@ -38,14 +47,87 @@ router.get('/admin/entitlements', requireAdmin, (req, res) => {
   });
 });
 
-// Список пользователей, которые уже открывали Mini App или вызывали API.
-router.get('/admin/users', requireAdmin, (req, res) => {
+// Сводка по пользователям, активности, выручке и текущим лимитам.
+router.get('/admin/overview', requireAdmin, (req, res) => {
+  res.json({
+    success: true,
+    data: getAdminOverview()
+  });
+});
+
+// Последние платежи Telegram Stars для финансового блока админки.
+router.get('/admin/payments', requireAdmin, (req, res) => {
   res.json({
     success: true,
     data: {
-      users: listUsers()
+      payments: listPayments()
     }
   });
+});
+
+// Список пользователей, которые уже открывали Mini App или вызывали API.
+router.get('/admin/users', requireAdmin, (req, res) => {
+  const data = listUsersPage({
+    query: req.query.query,
+    filter: req.query.filter,
+    limit: req.query.limit,
+    offset: req.query.offset
+  });
+
+  res.json({
+    success: true,
+    data
+  });
+});
+
+// Детальная карточка пользователя для админского управления.
+router.get('/admin/users/:telegramId', requireAdmin, (req, res) => {
+  try {
+    res.json({ success: true, data: getUserDetails(req.params.telegramId) });
+  } catch (err) {
+    res.status(404).json({ success: false, error: err.message });
+  }
+});
+
+router.put('/admin/users/:telegramId/flags', requireAdmin, (req, res) => {
+  try {
+    res.json({ success: true, data: updateUserFlags(req.params.telegramId, req.body || {}) });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/admin/users/:telegramId/block', requireAdmin, (req, res) => {
+  try {
+    const { reason, note } = req.body || {};
+    res.json({ success: true, data: blockUser(req.params.telegramId, reason, note) });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/admin/users/:telegramId/unblock', requireAdmin, (req, res) => {
+  try {
+    res.json({ success: true, data: unblockUser(req.params.telegramId) });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/admin/users/:telegramId/delete', requireAdmin, (req, res) => {
+  try {
+    res.json({ success: true, data: softDeleteUser(req.params.telegramId) });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/admin/users/:telegramId/restore', requireAdmin, (req, res) => {
+  try {
+    res.json({ success: true, data: restoreUser(req.params.telegramId) });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
 });
 
 // Выдача бесплатного доступа другу/тестеру.

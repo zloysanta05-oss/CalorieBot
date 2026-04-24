@@ -107,13 +107,21 @@ function getPlanForUser(userId) {
     access,
     settings,
     usage,
-    can_analyze: access.has_premium || usage.remaining > 0
+    can_analyze: !access.is_blocked && (access.has_premium || usage.remaining > 0)
   };
 }
 
 // Проверка перед дорогим AI-вызовом: лимит должен отсеиваться до OpenAI.
 function assertCanAnalyze(userId) {
   const plan = getPlanForUser(userId);
+  if (plan.access && plan.access.is_blocked) {
+    const err = new Error('User is blocked');
+    err.statusCode = 403;
+    err.code = 'user_blocked';
+    err.plan = plan;
+    throw err;
+  }
+
   if (!plan.can_analyze) {
     const err = new Error('Daily free limit reached');
     err.statusCode = 402;
@@ -137,6 +145,14 @@ function recordAnalysis(userId) {
 // Создаем локальный pending-платеж перед созданием invoice в Telegram.
 function createPaymentIntent(userId, plan) {
   const settings = getSettings();
+  const access = getAccessStatus(userId);
+  if (access.is_blocked) {
+    const err = new Error('User is blocked');
+    err.statusCode = 403;
+    err.code = 'user_blocked';
+    throw err;
+  }
+
   const selectedPlan = plan || 'premium_month';
   if (selectedPlan !== 'premium_month') {
     throw new Error('Unknown plan');

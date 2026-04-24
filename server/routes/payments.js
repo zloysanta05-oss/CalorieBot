@@ -47,10 +47,12 @@ router.post('/payments/subscription-invoice', async (req, res) => {
     });
   } catch (err) {
     console.error('Create subscription invoice error:', err.message);
-    res.status(500).json({
+    res.status(err.statusCode || 500).json({
       success: false,
-      error: 'invoice_error',
-      message: 'Не удалось создать счет на оплату'
+      error: err.code || 'invoice_error',
+      message: err.code === 'user_blocked'
+        ? 'Доступ ограничен администратором'
+        : 'Не удалось создать счет на оплату'
     });
   }
 });
