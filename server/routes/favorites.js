@@ -3,6 +3,7 @@ const db = require('../db');
 
 const router = express.Router();
 
+// Подготовленные запросы для списка избранного, поиска дублей и переноса блюда в дневник.
 const listFavorites = db.prepare(`
   SELECT *
   FROM favorite_meals
@@ -39,6 +40,7 @@ const insertMeal = db.prepare(`
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'favorite', ?)
 `);
 
+// Состав блюда хранится JSON-строкой, поэтому перед сохранением приводим элементы к безопасному формату.
 function normalizeItemsJson(items) {
   if (!Array.isArray(items) || items.length === 0) return null;
 
@@ -56,6 +58,7 @@ function normalizeItemsJson(items) {
   return normalized.length ? JSON.stringify(normalized) : null;
 }
 
+// Нормализованное имя позволяет не плодить дубли вроде "Плов" и "плов".
 function normalizeFavoriteName(name) {
   return String(name || '')
     .trim()
@@ -64,6 +67,7 @@ function normalizeFavoriteName(name) {
     .replace(/\s+/g, ' ');
 }
 
+// Проверяем дубли в пределах одного пользователя; exceptId нужен при редактировании существующей записи.
 function findDuplicateFavorite(telegramId, name, exceptId) {
   const key = normalizeFavoriteName(name);
   if (!key) return null;
@@ -74,6 +78,7 @@ function findDuplicateFavorite(telegramId, name, exceptId) {
   }) || null;
 }
 
+// Единая нормализация для ручного избранного и результата AI-анализа.
 function normalizeMealPayload(body) {
   const name = String(body.name || body.description || '').trim();
   if (!name) throw new Error('Name is required');
@@ -94,11 +99,13 @@ function normalizeMealPayload(body) {
   };
 }
 
+// Возвращаем избранное в порядке последнего обновления.
 router.get('/favorites', (req, res) => {
   const favorites = listFavorites.all(req.telegramUser.id);
   res.json({ success: true, data: { favorites } });
 });
 
+// Добавление не создает дубль: если блюдо уже есть, UI получает существующую запись.
 router.post('/favorites', (req, res) => {
   try {
     const data = normalizeMealPayload(req.body || {});
@@ -125,6 +132,7 @@ router.post('/favorites', (req, res) => {
   }
 });
 
+// Редактирование избранного сохраняет КБЖУ, порцию, тип приема пищи и состав блюда.
 router.put('/favorites/:id', (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -160,11 +168,13 @@ router.put('/favorites/:id', (req, res) => {
   }
 });
 
+// Удаление ограничено telegram_id текущего пользователя через WHERE.
 router.delete('/favorites/:id', (req, res) => {
   deleteFavorite.run(parseInt(req.params.id, 10), req.telegramUser.id);
   res.json({ success: true });
 });
 
+// Быстрый повтор из избранного создает новую запись дневника на выбранную дату.
 router.post('/favorites/:id/add-to-diary', (req, res) => {
   const id = parseInt(req.params.id, 10);
   const body = req.body || {};

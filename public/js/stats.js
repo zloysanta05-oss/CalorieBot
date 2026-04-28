@@ -1,10 +1,12 @@
 // Логика вкладок «Профиль» и «Админ».
 
 var profileTab = (function() {
+  // Профиль хранит текущую цель, результат калькулятора и восстановленное состояние формы.
   var currentGoal = 2000;
   var calculatedGoal = null;
   var calcStorageKey = 'profileCalorieCalculator';
 
+  // Калькулятор скрыт отдельным экраном, а профиль остается чистым для обычного просмотра.
   function init() {
     document.getElementById('btn-save-calculated-goal').addEventListener('click', function() {
       saveGoal(parseInt(document.getElementById('calc-goal-input').value, 10));
@@ -41,6 +43,7 @@ var profileTab = (function() {
     loadProfile();
   }
 
+  // Экран пересчета получает последнюю сохраненную или рассчитанную цель.
   function showCalculatorScreen() {
     document.getElementById('calc-goal-input').value = calculatedGoal || currentGoal;
     document.getElementById('profile-main').classList.add('hidden');
@@ -52,6 +55,7 @@ var profileTab = (function() {
     document.getElementById('profile-main').classList.remove('hidden');
   }
 
+  // Профиль собирает недельную статистику, цель и freemium/Premium статус одним пакетом.
   function loadProfile() {
     var today = todayStr();
     var weekFrom = addDays(today, -6);
@@ -77,6 +81,7 @@ var profileTab = (function() {
     });
   }
 
+  // Блок доступа показывает статус пользователя и кнопку покупки только для Free.
   function renderAccess(plan) {
     renderUser(plan.user || {});
     var data = plan.access;
@@ -106,6 +111,7 @@ var profileTab = (function() {
     premiumActions.classList.toggle('hidden', data.has_premium);
   }
 
+  // Сохранение цели используется и для ручного числа, и для результата Миффлина-Сан Жеора.
   function saveGoal(value) {
     var val = parseInt(value, 10);
     if (!val || val < 500 || val > 10000) {
@@ -127,6 +133,7 @@ var profileTab = (function() {
     });
   }
 
+  // Имя и аватар берутся из Telegram-профиля, который backend сохраняет при API-запросах.
   function renderUser(user) {
     var name = [user.first_name, user.last_name].filter(Boolean).join(' ').trim();
     if (!name && user.username) name = '@' + user.username;
@@ -137,6 +144,7 @@ var profileTab = (function() {
     document.getElementById('profile-avatar').textContent = name.trim().charAt(0).toLocaleUpperCase('ru-RU');
   }
 
+  // Состояние калькулятора живет локально, чтобы пользователь не вводил данные заново.
   function restoreCalculatorState() {
     try {
       var saved = JSON.parse(localStorage.getItem(calcStorageKey) || '{}');
@@ -153,6 +161,7 @@ var profileTab = (function() {
     localStorage.setItem(calcStorageKey, JSON.stringify(state));
   }
 
+  // Формула Миффлина-Сан Жеора: BMR -> активность -> корректировка под цель.
   function updateCalorieCalculation() {
     var state = {
       sex: document.getElementById('calc-sex').value,
@@ -178,6 +187,7 @@ var profileTab = (function() {
     document.getElementById('calc-goal-input').value = calculatedGoal;
   }
 
+  // Telegram Stars invoice открывается средствами Telegram WebApp.
   function buyPremium() {
     var btn = document.getElementById('btn-buy-premium');
     btn.disabled = true;
@@ -206,6 +216,7 @@ var profileTab = (function() {
     });
   }
 
+  // Недельный график строится без AI, только по данным дневника.
   function renderWeekChart(data) {
     var days = data.days || [];
     var goal = data.goal || currentGoal;
@@ -235,6 +246,7 @@ var profileTab = (function() {
     renderWeekSummary(data, summaryEl);
   }
 
+  // Текстовая сводка недели разбита на строки, чтобы не плыть на узких экранах.
   function renderWeekSummary(data, summaryEl) {
     var avg = data.averages || {};
     var best = data.best_day;
@@ -262,6 +274,7 @@ var profileTab = (function() {
 })();
 
 var adminTab = (function() {
+  // Админка имеет собственную внутреннюю навигацию и состояние пагинации пользователей.
   var currentAccess = null;
   var settings = { premium_stars: 100, free_daily_limit: 3 };
   var activePanel = 'overview';
@@ -272,6 +285,7 @@ var adminTab = (function() {
   var usersTotal = 0;
   var searchTimer = null;
 
+  // Все списки админки динамические, поэтому клики по строкам обрабатываются делегированием.
   function init() {
     document.querySelectorAll('.admin-tab-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
@@ -335,6 +349,7 @@ var adminTab = (function() {
     loadAdmin();
   }
 
+  // Переключение внутренних разделов не меняет основную вкладку приложения.
   function switchPanel(panel) {
     activePanel = panel || 'overview';
     document.querySelectorAll('.admin-tab-btn').forEach(function(btn) {
@@ -346,6 +361,7 @@ var adminTab = (function() {
     loadPanel(activePanel);
   }
 
+  // Каждый раздел грузит только свои данные, чтобы не делать лишние API-запросы.
   function loadPanel(panel) {
     if (!currentAccess || !currentAccess.is_admin) return;
     if (panel === 'overview') {
@@ -358,6 +374,7 @@ var adminTab = (function() {
     if (panel === 'limits') loadBlockedUsers();
   }
 
+  // Перед загрузкой админских данных проверяем текущий access из общего monetization endpoint.
   function loadAdmin() {
     api.getMonetization().then(function(res) {
       currentAccess = res.data.access;
@@ -375,6 +392,7 @@ var adminTab = (function() {
     });
   }
 
+  // Обзор собирает продуктовые и финансовые метрики в компактные карточки.
   function loadOverview() {
     api.getAdminOverview().then(function(res) {
       var data = res.data || {};
@@ -400,6 +418,7 @@ var adminTab = (function() {
     '</div>';
   }
 
+  // Одна форма сохраняет и цену Premium, и дневной free-лимит.
   function saveMonetization() {
     var premiumStars = parseInt(document.getElementById('admin-premium-stars').value, 10);
     var freeLimit = parseInt(document.getElementById('admin-free-limit').value, 10);
@@ -427,6 +446,7 @@ var adminTab = (function() {
     });
   }
 
+  // Выдача доступа используется как из отдельного раздела, так и из карточки пользователя.
   function grantAccess() {
     var telegramId = parseInt(document.getElementById('admin-telegram-id').value, 10);
     var daysRaw = document.getElementById('admin-days').value;
@@ -456,6 +476,7 @@ var adminTab = (function() {
     });
   }
 
+  // Отзыв доступа подтверждается, потому что влияет на Premium/Gifted статус пользователя.
   function revokeAccess(telegramId) {
     if (!confirm('Отозвать доступ у пользователя ' + telegramId + '?')) return;
     api.revokeAccess(telegramId).then(function() {
@@ -470,6 +491,7 @@ var adminTab = (function() {
     });
   }
 
+  // Список выданных доступов живет отдельно от общего списка пользователей.
   function loadAdminEntitlements() {
     if (!currentAccess || !currentAccess.is_admin) return;
 
@@ -496,6 +518,7 @@ var adminTab = (function() {
     });
   }
 
+  // Пользователи грузятся страницами по 25 записей.
   function loadAdminUsers(append) {
     if (!currentAccess || !currentAccess.is_admin) return;
 
@@ -511,6 +534,7 @@ var adminTab = (function() {
     });
   }
 
+  // Раздел лимитов отдельно показывает всех заблокированных пользователей.
   function loadBlockedUsers() {
     api.getAdminUsers('', 'blocked', 100, 0).then(function(res) {
       renderUserList(document.getElementById('admin-blocked-users'), res.data.users || [], 'Заблокированных пользователей нет');
@@ -519,6 +543,7 @@ var adminTab = (function() {
     });
   }
 
+  // Любой новый поиск/фильтр начинает список пользователей с первой страницы.
   function resetUserPagination() {
     usersOffset = 0;
     usersHasMore = false;
@@ -526,6 +551,7 @@ var adminTab = (function() {
     document.getElementById('admin-users-pagination').innerHTML = '';
   }
 
+  // При append=true новые пользователи добавляются к уже показанным строкам.
   function renderUserList(container, rows, emptyText, append) {
     if (rows.length === 0) {
       if (!append) {
@@ -551,6 +577,7 @@ var adminTab = (function() {
     container.innerHTML = append ? container.innerHTML + html : html;
   }
 
+  // Мини-пагинация сделана кнопкой "Показать еще", удобной для Mini App.
   function renderUsersPagination(shown) {
     var container = document.getElementById('admin-users-pagination');
     if (!usersTotal) {
@@ -562,6 +589,7 @@ var adminTab = (function() {
       (usersHasMore ? '<button class="btn btn-secondary btn-small admin-load-more" type="button">Показать еще</button>' : '');
   }
 
+  // Карточка пользователя открывается из любого списка админки.
   function openUserCard(telegramId) {
     api.getAdminUser(telegramId).then(function(res) {
       renderUserCard(res.data);
@@ -571,6 +599,7 @@ var adminTab = (function() {
     });
   }
 
+  // Карточка объединяет статус, активность, доступы, платежи и опасные действия.
   function renderUserCard(data) {
     var user = data.user;
     var entitlement = data.entitlement;
@@ -607,6 +636,7 @@ var adminTab = (function() {
     return '<div class="admin-user-fact"><span>' + escapeHtml(label) + '</span><strong>' + escapeHtml(value) + '</strong></div>';
   }
 
+  // Все действия карточки пользователя собраны в одном обработчике.
   function handleUserCardClick(e) {
     var close = e.target.closest('.admin-card-close');
     if (close) {
@@ -654,6 +684,7 @@ var adminTab = (function() {
     }
   }
 
+  // Блокировка запрещает пользователю AI-анализ и оплату Premium.
   function toggleBlock(telegramId) {
     api.getAdminUser(telegramId).then(function(res) {
       var user = res.data.user;
@@ -676,6 +707,7 @@ var adminTab = (function() {
     });
   }
 
+  // Мягкое удаление скрывает пользователя из обычного списка без физического удаления данных.
   function toggleDelete(telegramId) {
     api.getAdminUser(telegramId).then(function(res) {
       var user = res.data.user;
@@ -697,6 +729,7 @@ var adminTab = (function() {
     });
   }
 
+  // Платежи показываются в обзоре коротко и в монетизации полным списком.
   function loadAdminPayments(containerId, limit) {
     api.getAdminPayments().then(function(res) {
       var rows = res.data.payments || [];

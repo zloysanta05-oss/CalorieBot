@@ -1,3 +1,4 @@
+// Промпт распознавания продуктов возвращает временный список для ручного подтверждения.
 const PANTRY_PROMPT = `Ты — AI-помощник по домашнему питанию для России/СНГ.
 
 ВСЕГДА отвечай ТОЛЬКО валидным JSON-объектом без текста вне JSON.
@@ -24,6 +25,7 @@ const PANTRY_PROMPT = `Ты — AI-помощник по домашнему пи
 - Не выдумывай редкие ингредиенты без уверенности.
 - Названия продуктов пиши на русском языке.`;
 
+// Рецептный промпт намеренно ограничивает модель классическими домашними блюдами.
 const RECIPE_PROMPT = `Ты — AI-помощник по домашней готовке и подсчету КБЖУ для России/СНГ.
 
 ВСЕГДА отвечай ТОЛЬКО валидным JSON-объектом без текста вне JSON.
@@ -77,10 +79,12 @@ function stripJson(rawText) {
   return text;
 }
 
+// Все строковые поля от модели приводим к безопасной строке с запасным значением.
 function safeString(value, fallback) {
   return String(value || fallback || '').trim();
 }
 
+// Категории синхронизированы с UI продуктов и покупок.
 function normalizeCategory(value) {
   const allowed = [
     'овощи и фрукты',
@@ -93,10 +97,12 @@ function normalizeCategory(value) {
   return allowed.includes(value) ? value : 'другое';
 }
 
+// Уверенность нужна только для подсказки пользователю при подтверждении продуктов.
 function normalizeConfidence(value) {
   return ['high', 'medium', 'low'].includes(value) ? value : 'medium';
 }
 
+// Vision-запрос получает фото как data URL, без записи файла на диск.
 function buildPantryMessages(base64Image, mimeType) {
   return [
     { role: 'system', content: PANTRY_PROMPT },
@@ -113,6 +119,7 @@ function buildPantryMessages(base64Image, mimeType) {
   ];
 }
 
+// В рецепты передаем только подтвержденные продукты и цель пользователя.
 function buildRecipeMessages(items, goal) {
   const confirmedItems = items.map(item => ({
     name: item.name,
@@ -132,6 +139,7 @@ function buildRecipeMessages(items, goal) {
   ];
 }
 
+// Ответ модели парсим строго как JSON; при сбое вызывающий код покажет ошибку AI.
 function parsePantryResponse(rawText) {
   try {
     const data = JSON.parse(stripJson(rawText));
@@ -149,6 +157,7 @@ function parsePantryResponse(rawText) {
   }
 }
 
+// Нормализуем рецепт, чтобы UI всегда получил ожидаемые поля и числа.
 function normalizeRecipe(recipe) {
   const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
   const missingItems = Array.isArray(recipe.missing_items) ? recipe.missing_items : [];
@@ -180,6 +189,7 @@ function normalizeRecipe(recipe) {
   };
 }
 
+// Ограничиваем выдачу пятью рецептами, даже если модель вернула больше.
 function parseRecipeResponse(rawText) {
   try {
     const data = JSON.parse(stripJson(rawText));

@@ -5,11 +5,14 @@ const { analyzePantryImage } = require('../services/openai');
 const { assertCanAnalyze, recordAnalysis } = require('../services/monetization');
 
 const router = express.Router();
+
+// Фото продуктов не пишем на диск: сохраняем base64 только в SQLite-сессии подтверждения.
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 }
 });
 
+// Pantry-сессия хранит исходное распознавание до переноса в постоянные остатки.
 const insertSession = db.prepare(`
   INSERT INTO pantry_sessions (telegram_id, source, image_data)
   VALUES (?, ?, ?)
@@ -43,6 +46,7 @@ const updateItem = db.prepare(`
 
 const deleteItem = db.prepare('DELETE FROM pantry_items WHERE id = ?');
 
+// Пользователь может править распознанные продукты, поэтому валидируем каждую строку отдельно.
 function normalizeItem(body) {
   const name = String(body.name || '').trim();
   if (!name) throw new Error('Name is required');
@@ -55,6 +59,7 @@ function normalizeItem(body) {
   };
 }
 
+// Дорогой AI-вызов проверяет freemium/Premium лимит до отправки фото модели.
 router.post('/pantry/analyze-photo', upload.single('photo'), async (req, res) => {
   try {
     assertCanAnalyze(req.telegramUser.id);
@@ -107,6 +112,7 @@ router.post('/pantry/analyze-photo', upload.single('photo'), async (req, res) =>
   }
 });
 
+// Возвращаем сессию и ее элементы для повторного открытия списка подтверждения.
 router.get('/pantry/sessions/:id', (req, res) => {
   const session = getSession.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!session) return res.status(404).json({ success: false, error: 'Session not found' });
@@ -114,6 +120,7 @@ router.get('/pantry/sessions/:id', (req, res) => {
   res.json({ success: true, data: { session, items: listItems.all(session.id) } });
 });
 
+// Ручное добавление продукта в уже созданную pantry-сессию.
 router.post('/pantry/sessions/:id/items', (req, res) => {
   try {
     const session = getSession.get(parseInt(req.params.id, 10), req.telegramUser.id);
@@ -127,6 +134,7 @@ router.post('/pantry/sessions/:id/items', (req, res) => {
   }
 });
 
+// Редактирование строки распознавания перед переносом в inventory.
 router.put('/pantry/items/:id', (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -141,6 +149,7 @@ router.put('/pantry/items/:id', (req, res) => {
   }
 });
 
+// Удаление лишнего распознанного продукта.
 router.delete('/pantry/items/:id', (req, res) => {
   const item = getItem.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!item) return res.status(404).json({ success: false, error: 'Item not found' });

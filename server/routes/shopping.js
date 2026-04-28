@@ -4,6 +4,7 @@ const { upsertInventoryItem } = require('../services/inventory');
 
 const router = express.Router();
 
+// Список покупок может создаваться вручную или наполняться недостающими продуктами из рецепта.
 const getRecipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND telegram_id = ?');
 const getList = db.prepare('SELECT * FROM shopping_lists WHERE id = ? AND telegram_id = ?');
 const getCurrentList = db.prepare(`
@@ -50,11 +51,13 @@ const CATEGORIES = new Set([
   'другое'
 ]);
 
+// Категории намеренно ограничены, чтобы UI мог стабильно группировать товары.
 function normalizeCategory(category) {
   const value = String(category || 'другое').trim().toLocaleLowerCase('ru-RU');
   return CATEGORIES.has(value) ? value : 'другое';
 }
 
+// Один нормализатор используется и для создания, и для редактирования товара.
 function normalizeItemPayload(body, fallback) {
   const base = fallback || {};
   const name = String(body.name !== undefined ? body.name : base.name || '').trim();
@@ -68,15 +71,18 @@ function normalizeItemPayload(body, fallback) {
   };
 }
 
+// API возвращает список сразу с товарами, чтобы фронту не делать второй запрос.
 function serializeList(list) {
   return { ...list, items: listItems.all(list.id) };
 }
 
+// Если активного списка нет, ручное добавление создает "Мой список покупок".
 function createList(telegramId, title, recipeId) {
   const inserted = insertList.run(telegramId, recipeId || null, title || 'Мой список покупок');
   return getList.get(inserted.lastInsertRowid, telegramId);
 }
 
+// Список из рецепта дополняет текущий активный список, а не перезаписывает его.
 function getTargetList(telegramId, listId, title, recipeId) {
   const explicitId = parseInt(listId, 10);
   if (explicitId) {
@@ -87,17 +93,20 @@ function getTargetList(telegramId, listId, title, recipeId) {
   return getCurrentList.get(telegramId) || createList(telegramId, title, recipeId);
 }
 
+// Последний созданный список считается активным для текущей версии MVP.
 router.get('/shopping-lists/current', (req, res) => {
   const list = getCurrentList.get(req.telegramUser.id);
   res.json({ success: true, data: list ? serializeList(list) : null });
 });
 
+// Ручное создание списка без привязки к рецепту.
 router.post('/shopping-lists', (req, res) => {
   const body = req.body || {};
   const list = createList(req.telegramUser.id, String(body.title || 'Мой список покупок').trim(), null);
   res.json({ success: true, data: serializeList(list) });
 });
 
+// Недостающие ингредиенты рецепта добавляются в активный список покупок.
 router.post('/shopping-lists/from-recipe/:recipeId', (req, res) => {
   const body = req.body || {};
   const recipe = getRecipe.get(parseInt(req.params.recipeId, 10), req.telegramUser.id);
@@ -118,6 +127,7 @@ router.post('/shopping-lists/from-recipe/:recipeId', (req, res) => {
   res.json({ success: true, data: serializeList(list) });
 });
 
+// Чтение конкретного списка защищено telegram_id.
 router.get('/shopping-lists/:id', (req, res) => {
   const list = getList.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!list) return res.status(404).json({ success: false, error: 'Shopping list not found' });
@@ -125,6 +135,7 @@ router.get('/shopping-lists/:id', (req, res) => {
   res.json({ success: true, data: serializeList(list) });
 });
 
+// Ручное добавление товара в выбранный список.
 router.post('/shopping-lists/:id/items', (req, res) => {
   try {
     const list = getList.get(parseInt(req.params.id, 10), req.telegramUser.id);
@@ -138,6 +149,7 @@ router.post('/shopping-lists/:id/items', (req, res) => {
   }
 });
 
+// Быстрая уборка списка после похода в магазин.
 router.delete('/shopping-lists/:id/checked-items', (req, res) => {
   const list = getList.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!list) return res.status(404).json({ success: false, error: 'Shopping list not found' });
@@ -146,6 +158,7 @@ router.delete('/shopping-lists/:id/checked-items', (req, res) => {
   res.json({ success: true, data: serializeList(list) });
 });
 
+// При первой отметке "куплено" товар попадает в текущие остатки.
 router.put('/shopping-items/:id', (req, res) => {
   try {
     const body = req.body || {};
@@ -178,6 +191,7 @@ router.put('/shopping-items/:id', (req, res) => {
   }
 });
 
+// Удаление товара из списка покупок не трогает inventory.
 router.delete('/shopping-items/:id', (req, res) => {
   const item = getItem.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!item) return res.status(404).json({ success: false, error: 'Shopping item not found' });

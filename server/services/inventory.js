@@ -1,7 +1,9 @@
 const db = require('../db');
 
+// MVP поддерживает только единицы, которые удобно показывать и суммировать в UI.
 const UNITS = ['г', 'мл', 'шт', 'упак'];
 
+// Все операции inventory ограничиваются telegram_id текущего пользователя.
 const listInventoryItems = db.prepare(`
   SELECT *
   FROM inventory_items
@@ -47,6 +49,7 @@ const addInventoryQuantity = db.prepare(`
 
 const deleteInventoryItem = db.prepare('DELETE FROM inventory_items WHERE id = ? AND telegram_id = ?');
 
+// Складываем количества, сохраняя null, если ни одно значение не было известно.
 function mergeQuantity(currentValue, addValue) {
   const currentIsEmpty = currentValue === null || currentValue === undefined;
   const addIsEmpty = addValue === null || addValue === undefined;
@@ -57,6 +60,7 @@ function mergeQuantity(currentValue, addValue) {
   return Math.max(0, Math.round((current + add) * 10) / 10);
 }
 
+// Нормализация имени нужна для объединения дублей: "Курица" и "курица." должны совпадать.
 function normalizeName(name) {
   return String(name || '')
     .trim()
@@ -66,6 +70,7 @@ function normalizeName(name) {
     .replace(/\s+/g, ' ');
 }
 
+// Приводим пользовательские и AI-единицы к короткому внутреннему набору.
 function normalizeUnit(unit) {
   const value = String(unit || '').trim().toLocaleLowerCase('ru-RU').replace('.', '');
   if (['г', 'гр', 'грамм', 'грамма', 'граммов'].includes(value)) return 'г';
@@ -77,6 +82,7 @@ function normalizeUnit(unit) {
   return UNITS.includes(value) ? value : 'упак';
 }
 
+// Килограммы и литры сразу переводятся в граммы/миллилитры, чтобы остатки суммировались.
 function normalizeQuantity(value, unit) {
   let quantityValue = value === null || value === undefined || value === '' ? null : Number(value);
   let quantityUnit = normalizeUnit(unit);
@@ -101,6 +107,7 @@ function normalizeQuantity(value, unit) {
   };
 }
 
+// Разбираем свободный текст вида "1 кг" или "300 г" из AI/пользовательского ввода.
 function parseQuantityText(text) {
   const raw = String(text || '').trim().replace(',', '.');
   if (!raw) return { quantity_value: null, quantity_unit: 'упак' };
@@ -111,6 +118,7 @@ function parseQuantityText(text) {
   return normalizeQuantity(Number(match[1]), match[2]);
 }
 
+// Единая нормализация payload для ручного ввода, фото продуктов и покупок.
 function normalizeInventoryPayload(body, fallbackSource) {
   const name = String(body.name || '').trim();
   if (!name) throw new Error('Name is required');
@@ -129,6 +137,7 @@ function normalizeInventoryPayload(body, fallbackSource) {
   };
 }
 
+// Добавление продукта либо создает новую строку, либо увеличивает существующую с той же единицей.
 function upsertInventoryItem(telegramId, data) {
   const item = normalizeInventoryPayload(data, data.source);
   const existing = findInventoryItem.get(telegramId, item.normalized_name, item.quantity_unit);
@@ -157,6 +166,7 @@ function upsertInventoryItem(telegramId, data) {
   return getInventoryItem.get(result.lastInsertRowid, telegramId);
 }
 
+// Страховочная консолидация объединяет старые дубли, если они появились до строгой проверки.
 function consolidateInventoryItems(telegramId) {
   const items = listInventoryItems.all(telegramId);
   const groups = new Map();
@@ -184,6 +194,7 @@ function consolidateInventoryItems(telegramId) {
   return listInventoryItems.all(telegramId);
 }
 
+// Проверка дубля при редактировании исключает текущую строку из поиска.
 function findDuplicateInventoryItem(telegramId, id, data) {
   const item = normalizeInventoryPayload(data, data.source);
   return listInventoryItems.all(telegramId).find(row => (
@@ -193,6 +204,7 @@ function findDuplicateInventoryItem(telegramId, id, data) {
   )) || null;
 }
 
+// Списание используется вручную и при действии "Приготовил" у рецепта.
 function consumeInventoryItem(telegramId, id, amount, unit) {
   const existing = getInventoryItem.get(id, telegramId);
   if (!existing) return null;
@@ -217,6 +229,7 @@ function consumeInventoryItem(telegramId, id, amount, unit) {
   return getInventoryItem.get(id, telegramId);
 }
 
+// Для рецепта ищем максимально похожий остаток по нормализованному названию.
 function findBestInventoryMatch(items, ingredient) {
   const normalized = normalizeName(ingredient.name);
   if (!normalized) return null;

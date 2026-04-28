@@ -1,6 +1,7 @@
 // Логика экранов «Сегодня», «Рецепты» и «Покупки».
 
 var todayTab = (function() {
+  // Состояние текущего сценария "Сегодня": источник ввода, результат AI и выбранный прием пищи.
   var currentResult = null;
   var currentPhotoBlob = null;
   var currentPhotoMode = 'food';
@@ -12,6 +13,7 @@ var todayTab = (function() {
   var resultScaleBase = null;
   var isSyncingResultFields = false;
 
+  // Регистрируем все обработчики вкладки один раз при старте приложения.
   function init() {
     document.getElementById('btn-photo').addEventListener('click', function() {
       currentPhotoMode = 'food';
@@ -77,17 +79,20 @@ var todayTab = (function() {
     loadTodayStats();
   }
 
+  // Текстовый сценарий скрывает остальные панели и сразу ставит фокус в описание блюда.
   function showTextInput() {
     hideAllTodayPanels();
     document.getElementById('text-input-area').classList.remove('hidden');
     document.getElementById('food-description').focus();
   }
 
+  // Ручное добавление используется без AI и сразу сохраняет введенные КБЖУ.
   function showManualInput() {
     hideAllTodayPanels();
     document.getElementById('manual-meal-area').classList.remove('hidden');
   }
 
+  // Все экраны вкладки взаимоисключающие, поэтому перед показом нужной панели скрываем остальные.
   function hideAllTodayPanels() {
     document.getElementById('today-dashboard').classList.add('hidden');
     document.getElementById('text-input-area').classList.add('hidden');
@@ -97,6 +102,7 @@ var todayTab = (function() {
     document.getElementById('analyze-result').classList.add('hidden');
   }
 
+  // Полный сброс нужен после отмены, ошибки анализа или успешного сохранения.
   function resetToDashboard() {
     currentResult = null;
     currentPhotoBlob = null;
@@ -116,6 +122,7 @@ var todayTab = (function() {
     autoSelectMealTypes();
   }
 
+  // Один file-input используется и для еды, и для фото продуктов; направление определяет recipesTab.
   function handlePhotoSelected(file) {
     compressImage(file, 1024, 0.7).then(function(blob) {
       if (recipesTab.isWaitingForPhoto()) {
@@ -134,12 +141,14 @@ var todayTab = (function() {
     });
   }
 
+  // Общий экран ожидания для фото и текста.
   function showLoading(text) {
     hideAllTodayPanels();
     document.getElementById('analyze-loading-text').textContent = text || 'Анализируем...';
     document.getElementById('analyze-loading').classList.remove('hidden');
   }
 
+  // Фото еды отправляется вместе с необязательной заметкой о составе/граммовке.
   function doPhotoAnalysis(blob) {
     inputSource = 'photo';
     showLoading('Анализируем фото еды...');
@@ -160,6 +169,7 @@ var todayTab = (function() {
     });
   }
 
+  // Текстовый анализ использует тот же экран результата, что и фото.
   function doTextAnalysis(description) {
     inputSource = 'text';
     showLoading('Анализируем описание...');
@@ -179,6 +189,7 @@ var todayTab = (function() {
     });
   }
 
+  // Результат AI сразу становится редактируемой формой перед сохранением в дневник.
   function displayResult(data) {
     setFavoriteResultState(false);
     document.getElementById('result-dish-name-input').value = data.dish_name || '';
@@ -211,6 +222,7 @@ var todayTab = (function() {
     document.getElementById('analyze-result').classList.remove('hidden');
   }
 
+  // Сохраняем уже отредактированные пользователем значения, а не исходный ответ AI.
   function saveAnalyzedMeal() {
     if (!currentResult) return;
     var edited = readEditedResult();
@@ -242,6 +254,7 @@ var todayTab = (function() {
     });
   }
 
+  // Избранное получает текущую ручную правку результата и состав блюда.
   function saveCurrentResultAsFavorite() {
     var btn = document.getElementById('btn-favorite-result');
     if (btn.dataset.added === 'true') {
@@ -276,6 +289,7 @@ var todayTab = (function() {
     });
   }
 
+  // Кнопка избранного визуально показывает, добавлено ли текущее блюдо.
   function setFavoriteResultState(isAdded) {
     var btn = document.getElementById('btn-favorite-result');
     if (!btn) return;
@@ -285,6 +299,7 @@ var todayTab = (function() {
     btn.setAttribute('aria-pressed', isAdded ? 'true' : 'false');
   }
 
+  // Калории и граммовка могут пропорционально пересчитать БЖУ.
   function initResultAutoScale() {
     document.getElementById('result-calories-input').addEventListener('change', scaleResultByCalories);
     document.getElementById('result-portion-input').addEventListener('change', scaleResultByPortion);
@@ -294,6 +309,7 @@ var todayTab = (function() {
     });
   }
 
+  // Базовые значения нужны, чтобы пересчет шел от исходной точки, а не накапливал ошибки округления.
   function captureResultScaleBase() {
     return {
       calories: parseNumberValue(document.getElementById('result-calories-input').value),
@@ -332,6 +348,7 @@ var todayTab = (function() {
     resultScaleBase.portion = nextPortion;
   }
 
+  // При изменении калорий меняем БЖУ, а при изменении БЖУ не трогаем калории и граммы.
   function applyResultScale(factor, includeCalories) {
     if (!Number.isFinite(factor) || factor < 0) return;
 
@@ -357,11 +374,13 @@ var todayTab = (function() {
     isSyncingResultFields = false;
   }
 
+  // Ручная правка БЖУ обновляет базу пересчета.
   function syncResultScaleBase() {
     if (isSyncingResultFields) return;
     resultScaleBase = captureResultScaleBase();
   }
 
+  // Ручное блюдо минует AI, но сохраняется тем же endpoint дневника.
   function saveManualMeal() {
     var name = document.getElementById('manual-name').value.trim();
     var calories = parseNumberValue(document.getElementById('manual-calories').value);
@@ -390,6 +409,7 @@ var todayTab = (function() {
     });
   }
 
+  // Главный экран "Сегодня" берет дневной прогресс из общей статистики.
   function loadTodayStats() {
     Promise.all([
       api.getStats('day', todayStr()),
@@ -419,6 +439,7 @@ var todayTab = (function() {
     });
   }
 
+  // Собираем редактируемую форму результата и валидируем название блюда.
   function readEditedResult() {
     var dishName = document.getElementById('result-dish-name-input').value.trim();
     var calories = parseNumberValue(document.getElementById('result-calories-input').value);
@@ -442,6 +463,7 @@ var todayTab = (function() {
     };
   }
 
+  // Голосовой ввод использует Web Speech API, если он доступен в браузере Telegram.
   function initVoiceInput() {
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     var btnVoice = document.getElementById('btn-voice-description');
@@ -509,6 +531,7 @@ var todayTab = (function() {
     }
   }
 
+  // При открытии приложения выбираем примерный прием пищи по локальному времени.
   function autoSelectMealTypes() {
     var h = new Date().getHours();
     var type = h >= 6 && h < 11 ? 'breakfast' : h >= 11 && h < 15 ? 'lunch' : h >= 15 && h < 20 ? 'dinner' : 'snack';
@@ -550,12 +573,14 @@ var todayTab = (function() {
 })();
 
 var recipesTab = (function() {
+  // Скрытая в текущей версии вкладка хранит сценарии продуктов, inventory и рецептов.
   var currentPantrySession = null;
   var currentPantryItems = [];
   var currentInventoryItems = [];
   var currentRecipes = [];
   var waitingForPhoto = false;
 
+  // Подключаем обработчики списков через делегирование, потому что строки рендерятся динамически.
   function init() {
     document.getElementById('btn-open-inventory').addEventListener('click', openInventoryPanel);
     document.getElementById('btn-close-inventory').addEventListener('click', closeInventoryPanel);
@@ -598,6 +623,7 @@ var recipesTab = (function() {
     loadInventory();
   }
 
+  // Панель "Мои продукты" открывается поверх основного сценария рецептов.
   function openInventoryPanel() {
     document.getElementById('recipes-start').classList.add('hidden');
     document.getElementById('recipes-area').classList.add('hidden');
@@ -612,6 +638,7 @@ var recipesTab = (function() {
     haptic('light');
   }
 
+  // Следующее выбранное фото будет обработано как фото продуктов, а не фото блюда.
   function startPhotoFlow() {
     waitingForPhoto = true;
     document.getElementById('file-input').click();
@@ -625,6 +652,7 @@ var recipesTab = (function() {
     return waitingForPhoto;
   }
 
+  // Фото продуктов создает временную pantry-сессию для подтверждения списка.
   function analyzePhoto(blob) {
     waitingForPhoto = false;
     document.getElementById('recipes-start').classList.add('hidden');
@@ -644,6 +672,7 @@ var recipesTab = (function() {
     });
   }
 
+  // После распознавания показываем редактируемый список продуктов и кнопку переноса в остатки.
   function renderPantryResult() {
     document.getElementById('recipes-start').classList.add('hidden');
     document.getElementById('inventory-panel').classList.add('hidden');
@@ -653,6 +682,7 @@ var recipesTab = (function() {
     renderPantryItems();
   }
 
+  // Inventory загружается отдельно, чтобы рецепты строились из постоянных остатков.
   function loadInventory() {
     api.getInventory().then(function(res) {
       currentInventoryItems = res.data.items || [];
@@ -662,6 +692,7 @@ var recipesTab = (function() {
     });
   }
 
+  // Список продуктов похож на дневник: строка + компактные действия редактирования/списания.
   function renderInventory() {
     var listEl = document.getElementById('inventory-list');
     var emptyEl = document.getElementById('inventory-empty');
@@ -717,6 +748,7 @@ var recipesTab = (function() {
     return Number(value).toString().replace('.', ',');
   }
 
+  // Pantry-строки редактируются до подтверждения, поэтому рендерятся как форма.
   function renderPantryItems() {
     var container = document.getElementById('pantry-items-list');
     if (!currentPantryItems.length) {
@@ -745,6 +777,7 @@ var recipesTab = (function() {
     }).join('');
   }
 
+  // Ручное добавление продукта в pantry помогает исправить пропущенное AI.
   function addPantryItem() {
     if (!currentPantrySession) return;
     var nameInput = document.getElementById('pantry-item-name');
@@ -772,6 +805,7 @@ var recipesTab = (function() {
     });
   }
 
+  // Ручное добавление сразу попадает в постоянные остатки.
   function addInventoryItem() {
     var nameInput = document.getElementById('inventory-item-name');
     var qtyInput = document.getElementById('inventory-item-qty');
@@ -795,6 +829,7 @@ var recipesTab = (function() {
     });
   }
 
+  // Редактирование остатка сохраняет имя, количество, единицу и категорию.
   function updateInventoryItem(row) {
     var id = parseInt(row.dataset.id, 10);
     var name = row.querySelector('.inventory-name').value.trim();
@@ -818,6 +853,7 @@ var recipesTab = (function() {
     });
   }
 
+  // Все действия строки inventory сведены в один обработчик: изменить, списать, удалить.
   function handleInventoryAction(action, id) {
     if (action === 'delete') {
       api.deleteInventoryItem(id).then(function() {
@@ -874,6 +910,7 @@ var recipesTab = (function() {
     }
   }
 
+  // Подтвержденные продукты из фото добавляются в inventory и объединяются с дублями.
   function confirmPantryToInventory() {
     if (!currentPantrySession) return;
 
@@ -887,6 +924,7 @@ var recipesTab = (function() {
     });
   }
 
+  // Изменения pantry-строки сохраняются сразу, чтобы подтверждение брало актуальные значения.
   function updatePantryItem(row) {
     var id = parseInt(row.dataset.id, 10);
     var name = row.querySelector('.pantry-name').value.trim();
@@ -917,6 +955,7 @@ var recipesTab = (function() {
     });
   }
 
+  // Клиентский парсер нужен для полей, где количество и единица вводятся раздельно.
   function parseClientQuantity(text) {
     var raw = String(text || '').trim();
     if (!raw) return { value: '', unit: 'г' };
@@ -950,6 +989,7 @@ var recipesTab = (function() {
     return raw + ' ' + (unit || 'г');
   }
 
+  // Рецепты генерируются из текущих остатков inventory, а не из разового фото.
   function generateRecipes() {
     var btn = document.getElementById('btn-generate-recipes');
     btn.disabled = true;
@@ -975,6 +1015,7 @@ var recipesTab = (function() {
     });
   }
 
+  // Карточки рецептов показывают КБЖУ, состав, недостающие продукты и действия.
   function renderRecipes() {
     var area = document.getElementById('recipes-area');
     var container = document.getElementById('recipes-list');
@@ -1001,6 +1042,7 @@ var recipesTab = (function() {
     }).join('');
   }
 
+  // Ингредиенты разбиты на доступные и недостающие для списка покупок.
   function renderRecipeIngredients(recipe) {
     var ingredients = recipe.ingredients || [];
     var missing = recipe.missing_items || [];
@@ -1028,6 +1070,7 @@ var recipesTab = (function() {
     '</div>';
   }
 
+  // Действия рецепта: дневник, приготовил, избранное или список покупок.
   function handleRecipeAction(action, id) {
     if (action === 'cook') {
       api.cookRecipe(id, { date: todayStr(), meal_type: 'lunch' }).then(function() {
@@ -1056,6 +1099,7 @@ var recipesTab = (function() {
     }
   }
 
+  // Сброс возвращает вкладку рецептов к начальному состоянию.
   function resetRecipes() {
     waitingForPhoto = false;
     currentPantrySession = null;
@@ -1085,6 +1129,7 @@ var recipesTab = (function() {
 })();
 
 var shoppingTab = (function() {
+  // Скрытый модуль покупок хранит один активный список и синхронизирует его с inventory.
   var currentList = null;
   var editingItemId = null;
   var categories = [
@@ -1096,6 +1141,7 @@ var shoppingTab = (function() {
     'другое'
   ];
 
+  // Обработчики списка используют делегирование, потому что товары часто перерисовываются.
   function init() {
     document.getElementById('btn-add-shopping-item').addEventListener('click', addShoppingItem);
     document.getElementById('btn-clear-checked').addEventListener('click', clearCheckedItems);
@@ -1141,6 +1187,7 @@ var shoppingTab = (function() {
     if (!currentList) loadCurrentList();
   }
 
+  // Список из рецепта или API становится текущим и запоминается в localStorage.
   function setList(list, notify) {
     currentList = list;
     if (list && list.id) localStorage.setItem('lastShoppingListId', list.id);
@@ -1149,6 +1196,7 @@ var shoppingTab = (function() {
     if (notify !== false) showToast('Список покупок создан');
   }
 
+  // При входе во вкладку восстанавливаем последний активный список.
   function loadCurrentList() {
     api.getCurrentShoppingList().then(function(res) {
       if (res.data) setList(res.data, false);
@@ -1158,6 +1206,7 @@ var shoppingTab = (function() {
     });
   }
 
+  // Ручное добавление товара создает список, если его еще нет.
   function ensureList() {
     if (currentList && currentList.id) return Promise.resolve(currentList);
     return api.createShoppingList({ title: 'Мой список покупок' }).then(function(res) {
@@ -1166,6 +1215,7 @@ var shoppingTab = (function() {
     });
   }
 
+  // Товары группируются по категориям для быстрого похода по магазину.
   function renderShoppingList() {
     var note = document.getElementById('shopping-note');
     var container = document.getElementById('shopping-list');
@@ -1199,6 +1249,7 @@ var shoppingTab = (function() {
     }).join('');
   }
 
+  // Каждая строка содержит обычный режим и раскрытую форму редактирования.
   function renderShoppingItem(item) {
     var isEditing = String(editingItemId) === String(item.id);
     var parsedQty = parseShoppingQuantity(item.quantity_text);
@@ -1243,6 +1294,7 @@ var shoppingTab = (function() {
     return html;
   }
 
+  // Новый товар сохраняет количество вместе с единицей измерения.
   function addShoppingItem() {
     var nameInput = document.getElementById('shopping-item-name');
     var qtyInput = document.getElementById('shopping-item-qty');
@@ -1274,6 +1326,7 @@ var shoppingTab = (function() {
     });
   }
 
+  // При первой отметке "куплено" backend добавляет товар в "Мои продукты".
   function toggleShoppingItem(id, isChecked) {
     var row = document.querySelector('.shopping-card[data-id="' + id + '"]');
     if (!row) return;
@@ -1297,6 +1350,7 @@ var shoppingTab = (function() {
     });
   }
 
+  // Редактирование товара сохраняет название, количество, единицу и категорию.
   function saveShoppingItem(id) {
     var row = document.querySelector('.shopping-card[data-id="' + id + '"]');
     if (!row) return;
@@ -1325,6 +1379,7 @@ var shoppingTab = (function() {
     });
   }
 
+  // Удаление товара не откатывает уже добавленные остатки.
   function deleteShoppingItem(id) {
     api.deleteShoppingItem(id).then(function() {
       if (currentList && currentList.items) {
@@ -1336,6 +1391,7 @@ var shoppingTab = (function() {
     });
   }
 
+  // Очистка купленного оставляет активный список, но убирает отмеченные строки.
   function clearCheckedItems() {
     if (!currentList || !currentList.id) return;
     api.clearCheckedShoppingItems(currentList.id).then(function(res) {
@@ -1362,6 +1418,7 @@ var shoppingTab = (function() {
     });
   }
 
+  // Категории нормализуются на клиенте так же, как на сервере.
   function normalizeCategory(category) {
     var value = String(category || 'другое').trim().toLocaleLowerCase('ru-RU');
     return categories.indexOf(value) === -1 ? 'другое' : value;
@@ -1378,6 +1435,7 @@ var shoppingTab = (function() {
     }).join('');
   }
 
+  // Разделяем количество и единицу, чтобы пользователь мог купить больше, чем требует рецепт.
   function parseShoppingQuantity(text) {
     var raw = String(text || '').trim();
     if (!raw) return { value: '', unit: 'г' };

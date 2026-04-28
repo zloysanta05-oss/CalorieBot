@@ -14,9 +14,11 @@ const {
 
 const router = express.Router();
 
+// Временная pantry-сессия превращается в постоянные остатки только после подтверждения пользователем.
 const getPantrySession = db.prepare('SELECT * FROM pantry_sessions WHERE id = ? AND telegram_id = ?');
 const listPantryItems = db.prepare('SELECT * FROM pantry_items WHERE session_id = ? ORDER BY id ASC');
 
+// Купленный товар можно перенести в остатки, но только из списка текущего пользователя.
 const getShoppingItem = db.prepare(`
   SELECT i.*
   FROM shopping_items i
@@ -24,10 +26,12 @@ const getShoppingItem = db.prepare(`
   WHERE i.id = ? AND l.telegram_id = ?
 `);
 
+// Текущий список продуктов пользователя во вкладке рецептов.
 router.get('/inventory', (req, res) => {
   res.json({ success: true, data: { items: listInventoryItems.all(req.telegramUser.id) } });
 });
 
+// Ручное добавление делает upsert: одинаковые продукт + единица суммируются.
 router.post('/inventory', (req, res) => {
   try {
     const item = upsertInventoryItem(req.telegramUser.id, {
@@ -40,6 +44,7 @@ router.post('/inventory', (req, res) => {
   }
 });
 
+// При редактировании запрещаем создать дубль с тем же normalized_name и единицей.
 router.put('/inventory/:id', (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
@@ -75,6 +80,7 @@ router.put('/inventory/:id', (req, res) => {
   }
 });
 
+// Полное удаление позиции остатков.
 router.delete('/inventory/:id', (req, res) => {
   const item = getInventoryItem.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!item) return res.status(404).json({ success: false, error: 'Inventory item not found' });
@@ -83,6 +89,7 @@ router.delete('/inventory/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// Списание уменьшает количество, но не уходит ниже нуля.
 router.post('/inventory/:id/consume', (req, res) => {
   const body = req.body || {};
   const item = consumeInventoryItem(
@@ -96,6 +103,7 @@ router.post('/inventory/:id/consume', (req, res) => {
   res.json({ success: true, data: item, reason: body.reason || 'использовано' });
 });
 
+// Подтвержденный список с фото переносится из временной зоны в постоянные остатки.
 router.post('/inventory/from-pantry-session/:sessionId', (req, res) => {
   const session = getPantrySession.get(parseInt(req.params.sessionId, 10), req.telegramUser.id);
   if (!session) return res.status(404).json({ success: false, error: 'Session not found' });
@@ -110,6 +118,7 @@ router.post('/inventory/from-pantry-session/:sessionId', (req, res) => {
   res.json({ success: true, data: { items: consolidateInventoryItems(req.telegramUser.id) } });
 });
 
+// Отмеченный купленным товар пополняет остатки пользователя.
 router.post('/inventory/from-shopping-item/:id', (req, res) => {
   const item = getShoppingItem.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!item) return res.status(404).json({ success: false, error: 'Shopping item not found' });

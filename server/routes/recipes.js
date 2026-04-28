@@ -11,6 +11,7 @@ const {
 
 const router = express.Router();
 
+// Рецепты могут строиться из временной pantry-сессии или из постоянных остатков inventory.
 const getSession = db.prepare('SELECT * FROM pantry_sessions WHERE id = ? AND telegram_id = ?');
 const listPantryItems = db.prepare('SELECT * FROM pantry_items WHERE session_id = ? ORDER BY id ASC');
 const getRecipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND telegram_id = ?');
@@ -46,6 +47,7 @@ const updateFavoriteRecipe = db.prepare(`
   WHERE id = ? AND telegram_id = ?
 `);
 
+// Избранные рецепты не должны дублироваться при разном регистре названия.
 function normalizeFavoriteName(name) {
   return String(name || '')
     .trim()
@@ -54,6 +56,7 @@ function normalizeFavoriteName(name) {
     .replace(/\s+/g, ' ');
 }
 
+// Поиск существующего избранного блюда перед сохранением рецепта.
 function findDuplicateFavorite(telegramId, name) {
   const key = normalizeFavoriteName(name);
   if (!key) return null;
@@ -61,6 +64,7 @@ function findDuplicateFavorite(telegramId, name) {
   return listFavorites.all(telegramId).find(item => normalizeFavoriteName(item.name) === key) || null;
 }
 
+// JSON-поля рецепта разворачиваются перед отправкой на фронт.
 function serializeRecipe(recipe) {
   return {
     ...recipe,
@@ -70,11 +74,13 @@ function serializeRecipe(recipe) {
   };
 }
 
+// Цель рецепта ограничена набором, который понимает промпт и UI.
 function normalizeGoal(goal) {
   const allowed = ['похудение', 'поддержание', 'набор массы', 'высокий белок'];
   return allowed.includes(goal) ? goal : 'поддержание';
 }
 
+// Добавление рецепта в дневник не списывает продукты само по себе.
 function addRecipeMeal(telegramId, recipe, date, mealType) {
   return insertMeal.run(
     telegramId,
@@ -90,6 +96,7 @@ function addRecipeMeal(telegramId, recipe, date, mealType) {
   );
 }
 
+// Действие "Приготовил" атомарно добавляет блюдо в дневник и списывает доступные ингредиенты.
 const cookRecipeTransaction = db.transaction((telegramId, recipe, date, mealType) => {
   const inserted = addRecipeMeal(telegramId, recipe, date, mealType);
   const ingredients = JSON.parse(recipe.ingredients_json || '[]').filter(item => item.available);
@@ -106,6 +113,7 @@ const cookRecipeTransaction = db.transaction((telegramId, recipe, date, mealType
   return inserted.lastInsertRowid;
 });
 
+// Генерация рецептов — дорогой AI-вызов, поэтому сначала проверяем лимит/блокировку.
 router.post('/recipes/generate', async (req, res) => {
   try {
     assertCanAnalyze(req.telegramUser.id);
@@ -177,6 +185,7 @@ router.post('/recipes/generate', async (req, res) => {
   }
 });
 
+// Получение сохраненного рецепта с развернутыми шагами и ингредиентами.
 router.get('/recipes/:id', (req, res) => {
   const recipe = getRecipe.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!recipe) return res.status(404).json({ success: false, error: 'Recipe not found' });
@@ -184,6 +193,7 @@ router.get('/recipes/:id', (req, res) => {
   res.json({ success: true, data: serializeRecipe(recipe) });
 });
 
+// Простое добавление рецепта в дневник без списания остатков.
 router.post('/recipes/:id/add-to-diary', (req, res) => {
   const body = req.body || {};
   const recipe = getRecipe.get(parseInt(req.params.id, 10), req.telegramUser.id);
@@ -199,6 +209,7 @@ router.post('/recipes/:id/add-to-diary', (req, res) => {
   res.json({ success: true, data: { id: inserted.lastInsertRowid } });
 });
 
+// Приготовление рецепта списывает ингредиенты только по явному действию пользователя.
 router.post('/recipes/:id/cook', (req, res) => {
   const body = req.body || {};
   const recipe = getRecipe.get(parseInt(req.params.id, 10), req.telegramUser.id);
@@ -218,6 +229,7 @@ router.post('/recipes/:id/cook', (req, res) => {
   }
 });
 
+// Рецепт в избранном хранит не только КБЖУ, но и ингредиенты/шаги для повторения.
 router.post('/recipes/:id/favorite', (req, res) => {
   const recipe = getRecipe.get(parseInt(req.params.id, 10), req.telegramUser.id);
   if (!recipe) return res.status(404).json({ success: false, error: 'Recipe not found' });
